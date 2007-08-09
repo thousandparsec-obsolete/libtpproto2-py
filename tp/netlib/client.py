@@ -264,10 +264,16 @@ class ClientConnection(Connection):
 			r = []
 			# Get each individual packet
 			for i in xrange(0, p.number):
-				for p in self.getsingle(seq, type):
-					if p == None:
-						yield p
-				r.append(p)
+				for q in self._recvFrame(seq):
+					if q == None:
+						yield q
+
+				if isinstance(q, type):
+					r.append(q)
+				elif isinstance(q, objects.Fail):
+					r.append(False, q.s)
+				else:
+					raise IOError("Received a bad packet (was %r)" % q)
 
 				yield Progress(number=i, of=p.number)
 	
@@ -283,29 +289,32 @@ class ClientConnection(Connection):
 		Get the (id, modtime) pairs of a certain type.
 		"""
 		if not issubclass(idseqtype, objects.GetIDSequence):
-			raise TypeError("Given type must be a subclass of 'IDSequence' packet")
+			raise TypeError("Given type must be a subclass of 'GetIDSequence' packet")
 
-		# Send the first request
-		for seq in self._sendFrame(idseqtype(-1, -1, 0, amount)):
-			if seq == None:
-				yield seq
+		g = self._getsingle(idseqtype(-1, -1, 0, amount), idseqtype.responses[0])
 
-		position = 0
-		while True:
-			# Wait for the request to come in
-			for p in self.getsingle(idseqtype.responses[0]):
-				if p == None:
-					yield p, None
+		pos = 0
+		ids = []
+		while g != None or len(ids) > 0:
+			if g != None:
+				for p in g:
+					# While waiting for a packet, return any ids
+					if p == None and len(ids) > 0:
+						yield ids.pop()
+					else:
+						yield (None, None)			
+		
+				pos += len(p.ids)
+				ids +=     p.ids
 
-			position += len(p.ids)
+				# Get another lot of ids
+				g = None
+				if p.left > 0:
+					g = self._getsingle(idseqtype(seq, p.key, pos, min(amount, p.left)), idseqtype.responses[0])
+				continue
 
-			# Request the next set off IDs
-			if p.left > 0:
-				self._send(idseqtype(seq, p.key, position, min(amount, p.left)))
-			
-			# Return each (id, modtime) pair
-			for id, modtime in p.ids:
-				yield id, modtime
+			yield ids.pop()
+
 
 	def disconnect(self):
 		"""\
@@ -435,7 +444,7 @@ class ClientConnection(Connection):
 		else:
 			raise IOError("Received a bad packet (was %r)" % p)
 
-	def get_object_ids(self, a=None, y=None, z=None, r=0, x=None, id=None, iter=False):
+	def get_object_by(self, a=None, y=None, z=None, r=0, x=None, id=None):
 		"""\
 		Get objects ids from the server,
 
@@ -468,6 +477,11 @@ class ClientConnection(Connection):
 		
 		for id, time in p.ids:
 			yield id, time
+
+	def get_object_ids(self, *args, **kw):
+		"""\
+		"""
+		return self._getids(objects.Object_GetID)
 
 	def get_objects(self, *args, **kw):
 		"""\
@@ -551,7 +565,7 @@ class ClientConnection(Connection):
 		# Get all order description ids (plus modification times)
 		[(25, 10029436), ...] = get_orderdesc_ids()
 		"""
-		return self._getids(objects.OrderDesc_IDSequence)
+		return self._getids(objects.OrderDesc_GetID)
 
 	def get_orderdescs(self, *args, **kw):
 		"""\
@@ -580,7 +594,7 @@ class ClientConnection(Connection):
 		# Get all board ids (plus modification times)
 		[(25, 10029436), ...] = get_board_ids()
 		"""
-		return self._getids(objects.Board_IDSequence)
+		return self._getids(objects.Board_GetID)
 
 	def get_boards(self, x=None, id=None, ids=None):
 		"""\
@@ -674,7 +688,7 @@ class ClientConnection(Connection):
 		[<board id=25>, (False, "No board")] = get_resources([25, 36])
 		[<board id=25>, (False, "No board")] = get_resources(ids=[25, 36])
 		"""
-		return self._getmany(objects.Resource_Get(-1, getidsarg(*arg, **kw)), object.Resource)
+		return self._getmany(objects.Resource_Get(-1, getidsarg(*arg, **kw)), objects.Resource)
 
 	def get_category_ids(self, iter=False):
 		"""\
