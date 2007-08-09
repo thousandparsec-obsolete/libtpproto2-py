@@ -21,6 +21,12 @@ class Progress(object):
 			raise TypeError("The 'number' argument must be less than or equal to the 'of' argument")
 		self.number = number	
 
+	def __str__(self):
+		if self.number is None:
+			return "<Progress for %i>" % self.of
+		return "<Progress %.0f%%>" % (float(self.number) / self.of * 100.0)
+	__repr__ = __str__
+
 	def __eq__(self, other):
 		return (other is None) or (other is False)
 
@@ -275,7 +281,7 @@ class ClientConnection(Connection):
 				else:
 					raise IOError("Received a bad packet (was %r)" % q)
 
-				yield Progress(number=i, of=p.number)
+				yield Progress(number=i+1, of=p.number)
 	
 			# Yay got the result!
 			yield r
