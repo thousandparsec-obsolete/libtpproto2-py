@@ -1,5 +1,7 @@
 
 
+import objects
+
 class Progress(object):
 	"""\
 	This class indicated that some progress has been made in downloading a
@@ -21,9 +23,6 @@ class Progress(object):
 
 	def __eq__(self, other):
 		return (other is None) or (other is False)
-
-class Connection(object):
-	pass
 
 def getlistarg(name, *args, **kw):
 	"""
@@ -62,22 +61,132 @@ def getslotsarg(*args, **kw):
 	"""
 	return getlistarg('slot', *args, **kw)
 
+import socket
+
+from common import Connection
 class ClientConnection(Connection):
 	"""
 	Now with thread safe goodness! *Yay*!
 	Now with readable and understandable code! *Yay*
 	"""
+	def setup(self, host, port=None, debug=False, proxy=None):
+		"""\
+		*Internal*
+
+		Sets up the socket for a connection.
+		"""
+		hoststring = host
+		self.proxy = None
+		
+		if hoststring.startswith("tphttp://") or hoststring.startswith("tphttps://"):
+			hoststring = hoststring[2:]
+
+		if hoststring.startswith("http://") or hoststring.startswith("https://"):
+			import urllib
+			opener = None
+
+			# use enviroment varibles
+			if proxy == None:
+				opener = urllib.FancyURLopener()
+			elif proxy == "":
+				# Don't use any proxies
+				opener = urllib.FancyURLopener({})
+			else:
+				if hoststring.startswith("http://"):
+					opener = urlib.FancyURLopener({'http': proxy})
+				elif hoststring.startswith("https://"):
+					opener = urlib.FancyURLopener({'https': proxy})
+				else:
+					raise "URL Error..."
+
+			import random, string
+			url = "/"
+			for i in range(0, 12):
+				url += random.choice(string.letters+string.digits)
+
+			o = opener.open(hoststring + url, "")
+			s = socket.fromfd(o.fileno(), socket.AF_INET, socket.SOCK_STREAM)
+
+##			# Read in the headers
+##			buffer = ""
+##			while not buffer.endswith("\r\n\r\n"):
+##				print "buffer:", repr(buffer)
+##				try:
+##					buffer += s.recv(1)
+##				except socket.error, e:
+##					pass
+##			print "Finished the http headers..."
+
+		else:
+			if hoststring.startswith("tp://") or hoststring.startswith("tps://"):
+				if hoststring.startswith("tp://"):
+					host = hoststring[5:]
+					if not port:
+						port = 6923
+				elif hoststring.startswith("tps://"):
+					host = hoststring[6:]
+					if not port:
+						port = 6924
+
+				if host.count(":") > 0:
+					host, port = host.split(':', 1)
+					port = int(port)
+			else:
+				if hoststring.count(":") > 0:
+					host, port = hoststring.split(':', 1)
+					port = int(port)
+				else:
+					host = hoststring
+
+					if not port:
+						port = 6923
+
+			print "Connecting to", host, type(host), port, type(port)
+
+			s = None
+			for af, socktype, proto, cannoname, sa in \
+					socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
+
+				try:
+					s = socket.socket(af, socktype, proto)
+					if debug:
+						print "Trying to connect to connect: (%s, %s)" % (host, port)
+
+					s.connect(sa)
+					break
+				except socket.error, msg:
+					if debug:
+						print "Connect fail: (%s, %s)" % (host, port)
+					if s:
+						s.close()
+
+					s = None
+					continue
+
+			if not s:
+				raise socket.error, msg
+
+			if hoststring.startswith("tps://"):
+				print "Creating SSL wrapper...."
+				s = SSLWrapper(s)
+
+		self.hoststring = hoststring
+		self.host = host
+		self.port = port
+
+		Connection.setup(self, s, debug=debug)
 
 	def _okfail(self, request):
 		"""
 		Deal with a Okay or Fail return.
 		"""
-		seq = self._sendg(request)
+		for seq in self._sendFrame(request):
+			if seq == None:
+				yield seq
 
-		for p in self._recvg(seq):
+		for p in self._recvFrame(seq):
 			if p == None:
-				yield
-			break
+				yield p
 
 		# Check it's the reply we are after
 		if isinstance(p, objects.OK):
@@ -91,12 +200,13 @@ class ClientConnection(Connection):
 		"""
 		Deal with a Fail or give packet type return.
 		"""
-		seq = self._sendg(request)
+		for seq in self._sendFrame(request):
+			if seq == None:
+				yield seq
 
-		for p in self._recvg(seq):
+		for p in self._recvFrame(seq):
 			if p == None:
-				yield
-			break
+				yield p
 
 		if isinstance(p, type):
 			yield p
@@ -119,8 +229,7 @@ class ClientConnection(Connection):
 
 		Simple way to do this in "blocking" mode:
 			for result in connection.getmany(12, <type>):
-				if result != None:
-					break
+				pass
 			if failed(result):
 				print "The command failed :/", result[1]
 			print "The command worked!", r
@@ -129,13 +238,14 @@ class ClientConnection(Connection):
 		hence there will only be a limited number of yields (where as in non-blocking 
 		mode the command will yield as soon as possible).
 		"""
-		seq = self._sendg(request)
+		for seq in self._sendFrame(request):
+			if seq == None:
+				yield seq
 
 		# Wait for the first packet
-		for p in self._recvg(seq):
+		for p in self._recvFrame(seq):
 			if p == None:
-				yield
-			break
+				yield p
 
 		# The whole command failed :(
 		if isinstance(p, objects.Fail):
@@ -156,8 +266,7 @@ class ClientConnection(Connection):
 			for i in xrange(0, p.number):
 				for p in self.getsingle(seq, type):
 					if p == None:
-						yield
-					break
+						yield p
 				r.append(p)
 
 				yield Progress(number=i, of=p.number)
@@ -177,21 +286,22 @@ class ClientConnection(Connection):
 			raise TypeError("Given type must be a subclass of 'IDSequence' packet")
 
 		# Send the first request
-		sequenceno = self._send(idseqtype(-1, -1, 0, amount))
+		for seq in self._sendFrame(idseqtype(-1, -1, 0, amount)):
+			if seq == None:
+				yield seq
 
 		position = 0
 		while True:
 			# Wait for the request to come in
 			for p in self.getsingle(idseqtype.responses[0]):
 				if p == None:
-					yield None, None
-				break
+					yield p, None
 
 			position += len(p.ids)
 
 			# Request the next set off IDs
 			if p.left > 0:
-				self._send(idseqtype(sequence, p.key, position, min(amount, p.left)))
+				self._send(idseqtype(seq, p.key, position, min(amount, p.left)))
 			
 			# Return each (id, modtime) pair
 			for id, modtime in p.ids:
@@ -235,26 +345,30 @@ class ClientConnection(Connection):
 		"""
 		# Send a connect packet
 		from version import version
-		sequenceno = self._send(objects.Connect(-1, ("libtpproto-py/%i.%i.%i " % version[:3]) + str))
 
-		for p in self._recv(no):
+		for seq in self._sendFrame(objects.Connect(-1, ("libtpproto-py/%i.%i.%i " % version[:3]) + str)):
+			if seq == None:
+				yield seq
+
+		for p in self._recvFrame(seq):
 			if p == None:
-				yield
-			break
+				yield p
 
 		# Check it's the reply we are after
 		if isinstance(p, objects.OK):
-			return True, p.s
+			yield True, p.s
 		elif isinstance(p, objects.Fail):
-			return False, p.s
+			yield False, p.s
 
 		elif isinstance(p, objects.Redirect):
 			# FIXME: Connect to another location...
-			self.setup(p.s, nb=self._noblock(), debug=self.debug, proxy=self.proxy)
-			return self.connect()
+			self.setup(p.s, debug=self.debug, proxy=self.proxy)
+
+			for y in self.connect():
+				yield y
 		else:
 			# We got a bad packet
-			raise IOError("Bad Packet was received")
+			raise IOError("Received a bad packet (was %r)" % p)
 
 	def account(self, username, password, email, comment=""):
 		"""\
@@ -308,10 +422,9 @@ class ClientConnection(Connection):
 		"""
 		# Send a connect packet
 		sequenceno = self._send(objects.TimeRemaining_Get(-1))
-		for p in self._recvg(seq):
+		for p in self._recvFrame(seq):
 			if p == None:
-				yield
-			break
+				yield p
 
 		# Check it's the reply we are after
 		if isinstance(p, objects.TimeRemaining):
@@ -352,7 +465,6 @@ class ClientConnection(Connection):
 		for p in self._getsingle(p, objects.Object_IDSequence):
 			if p == None:
 				yield (None, None)
-			break
 		
 		for id, time in p.ids:
 			yield id, time
