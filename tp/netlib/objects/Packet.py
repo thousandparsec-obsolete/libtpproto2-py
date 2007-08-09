@@ -69,6 +69,10 @@ class Packet(object):
 	xstruct = property(xstruct)
 	
 	def __str__(self):
+		# FIXME: This is wrong!!!
+		if self.sequence == -1:
+			raise SystemError('Packet has a sequence of -1 so can not be sent over the wire!')
+
 		# FIXME: This won't work with a GroupStructure!
 		arguments = []
 		for structure in self.structures:
