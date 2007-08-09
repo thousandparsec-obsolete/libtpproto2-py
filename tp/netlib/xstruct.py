@@ -65,81 +65,109 @@ def hexbyte(string):
 	"""\
 	Takes a string and prints out the bytes in hex.
 	"""
+#	return repr(string)
 	s = ""
 	for i in string:
-		s += str(hex(ord(i)))
 		if (ord(i) >= ord('A') and ord(i) <= ord('z')) \
 			or (ord(i) >= ord('0') and ord(i) <= ord('9')) \
 			or (ord(i) == ord(" ")):
-			s += "(%s)" % i
-		s += " "
+			s += "%s" % i
+		else:
+			s += "\\x%02x" % ord(i)
+
+#		s += " "
 	return s
 
-def pack(struct, *args):
+def pack(sstruct, *aargs):
 	"""\
 	Takes a structure string and the arguments to pack in the format
 	specified by string.
 	"""
-	args = list(args)
-	output = ""
+	struct  = sstruct
+	args    = list(aargs)
+	args_no = len(aargs)
 
-	while len(struct) > 0:
-		char = struct[0]
-		struct = struct[1:]
-		
-		if char == ' ' or char == '!':
-			continue
-		elif char == '{':
-			# Find the closing brace
-			substruct, struct = string.split(struct, '}', maxsplit=1)
-			output += pack_list('L', substruct, args.pop(0))
-		elif char == '[':
-			# Find the closing brace
-			substruct, struct = string.split(struct, ']', maxsplit=1)
-			output += pack_list('I', substruct, args.pop(0))
-		elif char in 'Tt':
-			output += pack_time(args.pop(0), times[char])
-		elif char == 'S':
-			output += pack_string(args.pop(0))
-		elif char in string.digits:
-			# Get all the numbers
-			substruct = char
-			while struct[0] in string.digits:
-				substruct += struct[0]
-				struct = struct[1:]
-			# And the value the number applies to
-			substruct += struct[0]
+	output = ""
+	try:
+		while len(struct) > 0:
+			char = struct[0]
 			struct = struct[1:]
 			
-			number = int(substruct[:-1])
-			if substruct[-1] == 's':
-				output += _pack("!"+substruct, args.pop(0))
-			elif substruct[-1] == 'x':
-				output += "\0" * number
-			else:
-				# Get the correct number of arguments
-				new_args = []
-				while len(new_args) < number:
-					new_args.append(args.pop(0))
-					
-				output += apply(_pack, ["!"+substruct,] + new_args)
-		else:
-			if char in smallints and isinstance(args[0], long):
-				args[0] = int(args[0])
-			
-			a = args.pop(0)
-			if char in semi.keys():
-				if a == -1:
-					a = 2**semi[char][0]-1
-				
-				char = semi[char][1]
+			if len(args) == 0:
+				raise TypeError('Ran out of arguments, still had %s%s left of the structure' % (char, struct))
 
-			try:
-				output += _pack("!"+char, a)
-			except _error, e:
-				print "Struct", char, "Args '%s'" % (a,)
-				raise
-			
+			if char == ' ' or char == '!':
+				continue
+			elif char == '{':
+				# Find the closing brace
+				substruct, struct = string.split(struct, '}', maxsplit=1)
+				output += pack_list('L', substruct, args.pop(0))
+			elif char == '[':
+				# Find the closing brace
+				substruct, struct = string.split(struct, ']', maxsplit=1)
+				output += pack_list('I', substruct, args.pop(0))
+			elif char in 'Tt':
+				output += pack_time(args.pop(0), times[char])
+			elif char == 'S':
+				if not isinstance(args[0], (str, unicode, buffer)):
+					raise TypeError("Argument should be an string (to pack to %s), not a %s" % (char, type(args[0])))
+				output += pack_string(args.pop(0))
+			elif char in string.digits:
+				# Get all the numbers
+				substruct = char
+				while struct[0] in string.digits:
+					substruct += struct[0]
+					struct = struct[1:]
+				# And the value the number applies to
+				substruct += struct[0]
+				struct = struct[1:]
+				
+				number = int(substruct[:-1])
+				if substruct[-1] == 's':
+					output += _pack("!"+substruct, args.pop(0))
+				elif substruct[-1] == 'x':
+					output += "\0" * number
+				else:
+					# Get the correct number of arguments
+					new_args = []
+					while len(new_args) < number:
+						new_args.append(args.pop(0))
+						
+					output += apply(_pack, ["!"+substruct,] + new_args)
+			else:
+				if char in smallints and isinstance(args[0], long):
+					args[0] = int(args[0])
+				
+				a = args.pop(0)
+
+				# Check the type of the argument
+				if not isinstance(a, (int, long)):
+					raise TypeError("Argument should be an int or long (to pack to %s), not a %s" % (char, type(a)))
+
+				if char in semi.keys():
+					if a == -1:
+						a = 2**semi[char][0]-1
+					
+					char = semi[char][1]
+				elif char.upper() == char and a < 0:
+					raise TypeError("Argument must be positive (to pack to %s) not %s" % (char, a))
+
+				try:
+					output += _pack("!"+char, a)
+				except _error, e:
+					# FIXME: Should do something better here!
+					#print "Struct", char, "Args '%s'" % (a,)
+					raise
+	
+	except (TypeError, _error), e:
+		traceback = sys.exc_info()[2]
+		while not traceback.tb_next is None:
+			traceback = traceback.tb_next
+		raise TypeError, "%i argument was the cause ('%s' %s)\n\t%s" % (len(aargs)-len(args)-1, sstruct, repr(aargs)[1:-1], str(e).replace('\n', '\n\t')), traceback
+	
+	if len(args) > 0:
+		raise TypeError("Had too many arguments! Still got the following remaining %r" % args)
+	
 	return output
 
 
@@ -189,6 +217,10 @@ def unpack(struct, s):
 			struct = struct[1:]
 			
 			size = _calcsize(substruct)
+			size = _calcsize(substruct)
+			if size > len(s):
+				raise TypeError("Not enough data for %s, needed %s bytes got %r (%s bytes)" % (substruct[1:], size, s, len(s)))
+
 			data = _unpack("!"+substruct, s[:size])
 			s = s[size:]
 
@@ -200,6 +232,8 @@ def unpack(struct, s):
 				substruct = "!"+char
 
 			size = _calcsize(substruct)
+			if size > len(s):
+				raise TypeError("Not enough data for %s, needed %s bytes got %r (%s bytes)" % (substruct[1:], size, s, len(s)))
 
 			try:
 				data = _unpack(substruct, s[:size])
@@ -245,7 +279,11 @@ def unpack_list(length_struct, struct, s):
 
 	list = []
 	for i in range(0, length):
-		output, s = unpack(struct, s)
+		try:
+			output, s = unpack(struct, s)
+		except TypeError, e:
+			raise TypeError("Problem unpacking list item (index %s): %s" % (i, e))
+
 		if len(output) == 1:
 			list.append(output[0])
 		else:
@@ -278,9 +316,16 @@ def unpack_string(s):
 		return "", s
 	
 	# Remove the length
-	(l, ), s = unpack("I", s)
+	try:
+		(l, ), s = unpack("I", s)
+	except TypeError, e:
+		raise TypeError("Problem unpacking length of string: %s" % e)
+
 	if l > 0:
 		# Get the string, (we don't need the null terminator so nuke it)
+		if len(s) < l:
+			raise TypeError("Not enough data for string, length said %s bytes got %r (%s bytes)" % (l, s, len(s)))
+
 		output = s[:l]
 		s = s[l:]
 		
@@ -302,7 +347,11 @@ def unpack_time(s, type='I'):
 
 	Returns the datetime object and any remaining data.
 	"""
-	(l,), s = unpack("!"+type, s)
+	try:
+		(l,), s = unpack("!"+type, s)
+	except TypeError, e:
+		raise TypeError("Problem unpacking time: %s" % e)
+
 	if l < 0:
 		return None
 	return datetime.fromtimestamp(l), s
@@ -315,8 +364,14 @@ def pack_time(t, type='I'):
 	"""
 	if t is None:
 		t = -1
-	else:
-		t = time.mktime(t.timetuple())
+	elif isinstance(t, datetime):
+		t = long(time.mktime(t.timetuple()))
+	elif isinstance(t, float):
+		# FIXME: This should be a depreciated warning...
+		print "Warning! pack_time called with float"
+		t = long(t)
+	elif not isinstance(t, (int, long)):
+		raise TypeError("Not a valid type for pack_time")
 	s = pack("!"+type, t)
 	return s
 
