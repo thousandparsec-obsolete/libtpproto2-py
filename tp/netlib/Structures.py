@@ -41,6 +41,19 @@ class Structure(object):
 		return "<%s %s %s>" % (self.__class__.__name__.split('.')[-1], hex(id(self)), self.name)
 	__repr__ = __str__
 
+	def __set__(self, obj, value):
+		self.check(value)
+		setattr(obj, "__"+self.name, value)
+
+	def __get__(self, obj, objcls):
+		try:
+			return getattr(obj, "__"+self.name)
+		except AttributeError, e:
+			raise AttributeError("No value defined for %s" % self.name)
+
+	def __delete__(self, obj):
+		delattr(obj, "__"+self.name)
+
 class StringStructure(Structure):
 	def check(self, value):
 		if not isinstance(value, StringTypes):
@@ -216,6 +229,49 @@ class EnumerationStructure(IntegerStructure):
 	xstruct = property(xstruct)
 
 class GroupStructure(Structure):
+	class GroupProxy(object):
+		def __init__(self, group, obj, objcls):
+			self.group  = group
+			self.obj    = obj
+			self.objcls = objcls
+
+		def __eq__(self, other):
+			l = []
+			for i, structure in enumerate(self.group.structures):
+				l.append(self[i])
+			return l == other
+
+		def __getitem__(self, position):
+			return self.group.structures[position].__get__(self.obj, self.objcls)
+
+		def __setitem__(self, position, value):
+			return self.group.structures[position].__set__(self.obj, value)
+	
+		def __delitem__(self, position):
+			return self.group.structures[position].__delete__(self.obj)
+
+		def __getattr__(self, name):
+			for i, structure in enumerate(self.group.structures):
+				if structure.name == "__%s_%s" % (self.group.name, name):
+					return self[i]
+			raise AttributeError("No such attribute %s" % name)
+
+		def __setattr__(self, name, value):
+			if name in ("group", "obj", "objcls"):
+				object.__setattr__(self, name, value)
+			else:
+				for i, structure in enumerate(self.group.structures):
+					if structure.name == "__%s_%s" % (self.group.name, name):
+						self[i] = value
+						return
+				raise AttributeError("No such attribute %s" % name)
+		def __delattr__(self, name):
+			for i, structure in enumerate(self.group.structures):
+				if structure.name == name:
+					del self[i]
+					return
+			raise AttributeError("No such attribute %s" % name)
+	
 	def __init__(self, *args, **kw):
 		Structure.__init__(self, *args, **kw)
 
@@ -227,20 +283,25 @@ class GroupStructure(Structure):
 		if not isinstance(structures, (TupleType, ListType)):
 			raise ValueError("Argument must be a list or tuple")
 
-		for structures in structures:
-			if not isinstance(structures, Structure):
+		for structure in structures:
+			if not isinstance(structure, Structure):
 				raise ValueError("All values in the list must be structures!")
+
+			# Rewrite the names so they don't clash
+			structure.name = "__%s_%s" % (self.name, structure.name)
+
 		self.structures = structures
-	
-	def check(self, list):
-		if not isinstance(list, (TupleType, ListType)):
+
+	def check(self, values, checkall=True):
+		if not isinstance(values, (TupleType, ListType)):
 			raise ValueError("Value must be a list or tuple")
 		
-		if len(list) != len(self.structures):
+		if len(values) != len(self.structures):
 			raise ValueError("Value is not the correct size, was %i must be %i" % (len(list), len(self.structures)))
 
-		for i in xrange(0, len(self.structures)):
-			self.structures[i].check(item[i])
+		if checkall:
+			for i in xrange(0, len(self.structures)):
+				self.structures[i].check(values[i])
 
 	def length(self, list):
 		length = 0
@@ -252,6 +313,19 @@ class GroupStructure(Structure):
 		for struct in self.structures:
 			xstruct += struct.xstruct
 	xstruct = property(xstruct)
+
+	def __set__(self, obj, value):
+		self.check(value, False)
+		value = list(value)
+		for structure in self.structures:
+			structure.__set__(obj, value.pop(0))
+
+	def __get__(self, obj, objcls):
+		return self.GroupProxy(self, obj, objcls)
+
+	def __del__(self, obj):
+		for structure in self.structures:
+			structures.__del__(obj)
 
 class ListStructure(GroupStructure):
 	def check(self, list):
@@ -297,3 +371,51 @@ Group		= GroupStructure
 List		= ListStructure
 
 __all__ = ["StringStructure", "CharacterStructure", "IntegerStructure", "DateTimeStructure", "GroupStructure", "ListStructure"]
+
+if __name__ == "__main__":
+
+	class Test(object):
+		test = StringStructure("test")
+
+		pos = GroupStructure("pos", structures=[IntegerStructure("x"), IntegerStructure("y")])
+
+	t = Test()
+
+	t.test = "Testing"
+	print t.test
+	del t.test
+	try:
+		print t.test
+		assert False
+	except Exception, e:
+		print e
+	try:
+		t.test = 12
+		assert False
+	except Exception, e:
+		print e
+
+	t.test = "test"
+	print t.test
+
+	t.pos = [10, 11]
+	assert t.pos == [10, 11]
+	assert t.pos[0] == 10
+	assert t.pos[1] == 11
+	assert t.pos.x == 10
+	assert t.pos.y == 11
+
+	t.pos.x = 12
+	assert t.pos == [12, 11]
+	assert t.pos[0] == 12
+	assert t.pos[1] == 11
+	assert t.pos.x == 12
+	assert t.pos.y == 11
+
+	t.pos.y = 13
+	assert t.pos == [12, 13]
+	assert t.pos[0] == 12
+	assert t.pos[1] == 13
+	assert t.pos.x == 12
+	assert t.pos.y == 13
+
