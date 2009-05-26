@@ -21,6 +21,7 @@ Normal stuff from the struct module:
 Extra stuff defined by this module:
 
  S	String
+ s	Char (identical to c)
  Y	Padded String	
  [	List Start		(unsigned int32 length)
  ]	List End	
@@ -92,7 +93,6 @@ def pack(sstruct, *aargs):
 		while len(struct) > 0:
 			char = struct[0]
 			struct = struct[1:]
-			
 			if len(args) == 0:
 				raise TypeError('Ran out of arguments, still had %s%s left of the structure' % (char, struct))
 
@@ -112,6 +112,8 @@ def pack(sstruct, *aargs):
 				if not isinstance(args[0], (str, unicode, buffer)):
 					raise TypeError("Argument should be an string (to pack to %s), not a %s" % (char, type(args[0])))
 				output += pack_string(args.pop(0))
+			elif char in 'cs':
+				output += _pack("!c", args.pop(0))
 			elif char in string.digits:
 				# Get all the numbers
 				substruct = char
@@ -163,7 +165,7 @@ def pack(sstruct, *aargs):
 		traceback = sys.exc_info()[2]
 		while not traceback.tb_next is None:
 			traceback = traceback.tb_next
-		raise TypeError, "%i argument was the cause ('%s' %s)\n\t%s" % (len(aargs)-len(args)-1, sstruct, repr(aargs)[1:-1], str(e).replace('\n', '\n\t')), traceback
+		raise TypeError, "%i argument was the cause ('%s', %s)\n\t%s" % (len(aargs)-len(args)-1, sstruct, repr(aargs)[1:-1], str(e).replace('\n', '\n\t')), traceback
 	
 	if len(args) > 0:
 		raise TypeError("Had too many arguments! Still got the following remaining %r" % args)
