@@ -94,7 +94,7 @@ def pack(sstruct, *aargs):
 			char = struct[0]
 			struct = struct[1:]
 			if len(args) == 0:
-				raise TypeError('Ran out of arguments, still had %s%s left of the structure' % (char, struct))
+				raise TypeError("Ran out of arguments, still had %s%s left of the structure" % (char, struct))
 
 			if char == ' ' or char == '!':
 				continue
@@ -114,6 +114,8 @@ def pack(sstruct, *aargs):
 				output += pack_string(args.pop(0))
 			elif char in 'cs':
 				output += _pack("!c", args.pop(0))
+			elif char in 'fd':
+				output += _pack('!' + char, args.pop(0))
 			elif char in string.digits:
 				# Get all the numbers
 				substruct = char
