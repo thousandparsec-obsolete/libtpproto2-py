@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from datetime import datetime
 
 from tp.netlib.xstruct import *
@@ -71,13 +74,27 @@ def test_pack_unpack():
 		#timestamps
 		('t', [datetime.fromtimestamp(0)], '\x00\x00\x00\x00'),
 		('T', [datetime.fromtimestamp(0)], '\x00\x00\x00\x00\x00\x00\x00\x00'),
+		
+		#lists
+		('[]', [[]], '\x00\x00\x00\x00'),
+		('[b]', [[0]], '\x00\x00\x00\x01\x00'),
+		('[bb]', [[(0, 0), (0, 0)]], '\x00\x00\x00\x02\x00\x00\x00\x00'),
+		
+		#strings
+		('S', [''], '\x00\x00\x00\x00'),
+		('S', ['ab'], '\x00\x00\x00\x02ab'),
+		('S', [u'Ж'], '\x00\x00\x00\x02\xd0\x96'), #CYRILLIC CAPITAL LETTER ZHE
+		('S', [u'中'], '\x00\x00\x00\x03\xe4\xb8\xad'), #HAN IDEOGRAPH
+		('S', [u'\U00010346'], '\x00\x00\x00\x04\xf0\x90\x8d\x86') #GOTHIC LETTER FAIHU
+		
+		
 		]
 	
 	for structure, values, string in tests:
 		assert pack(structure, *values) == string,\
-			"Packing %s with %s should have given %s, but instead gave %s" % (values, structure, `string`, `pack(structure, *values)`)
+			"Packing %s with %s should have given %r, but instead gave %r" % (values, structure, string, pack(structure, *values))
 		assert unpack(structure, string)[0] == tuple(values),\
-			"Unpacking %s with %s should have given %s, but instead gave %s" % (`string`, structure, tuple(values), unpack(structure, *values)[0])
+			"Unpacking %r with %s should have given %s, but instead gave %s" % (string, structure, tuple(values), unpack(structure, *values)[0])
 		assert unpack(structure, pack(structure, *values))[0] == tuple(values),\
 			"Packing and unpacking %s with %s, but got %s" % (tuple(values), structure, unpack(structure, pack(structure, *values))[0])
 		#we need to store this in a variable to use the unpack operator
