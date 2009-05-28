@@ -30,7 +30,7 @@ Extra stuff defined by this module:
  n	SInt16			(16 bit semi-signed integer)
  j	SInt32			(32 bit semi-signed integer)
  p	SInt64			(64 bit semi-signed integer)
- t	timestamp		(32 bit unsigned integer)
+ t	timestamp		(32 bit unsigned integer) 
  T	timestamp		(64 bit unsigned integer)
  
 The structure of the data in the list is described by the data inside the
@@ -42,6 +42,11 @@ Example:
 	
 Obviously you can't calculate size of an xstruct string. The unpack
 function will return the unused data.
+
+Limitations:
+Even though t and T are unsigned integers, they are limited to a range from 0
+to 2**31-1 seconds. This is because they are translated into datetime objects
+from the datetime module, which uses a signed 32-bit timestamp.
 """
 
 import pprint
