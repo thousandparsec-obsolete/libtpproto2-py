@@ -13,42 +13,77 @@ def test_pack_unpack():
 	#these are all tuples of (structure, values, string representation)
 	tests = [
 		#characters
-		('c', ('a',), 'a'), ('cc', ('A', 'd'), 'Ad'), ('c', ('\x00',), '\x00'),
-		('s', ('a',), 'a'), ('ss', ('A', 'd'), 'Ad'), ('s', ('\x00',), '\x00'),
+		('c', ['a'], 'a'),
+		('c', ['\x00'], '\x00'),
+		
+		('s', ['a'], 'a'),
+		('s', ['\x00'], '\x00'),
+		
 		#8-bit integers
-		('b', (1,), '\x01'), ('bbbb', (0,-1,127,-128), '\x00\xff\x7f\x80'),
-		('B', (1,), '\x01'), ('BBBB', (0,1,128,255), '\x00\x01\x80\xff'),
+		('b', [127], '\x7f'),
+		('b', [-128], '\x80'),
+		
+		('B', [0], '\x00'),
+		('B', [255], '\xff'),
+		
 		#16-bit integers
-		('h', (1,), '\x00\x01'), ('hhhh', (0,-1,32767,-32768), '\x00\x00\xff\xff\x7f\xff\x80\x00'),
-		('H', (1,), '\x00\x01'), ('HHHH', (0,1,32768,65535), '\x00\x00\x00\x01\x80\x00\xff\xff'),
-		('n', (1,), '\x00\x01'), ('nnnn', (0,-1,32768,65534), '\x00\x00\xff\xff\x80\x00\xff\xfe'),
+		('h', [-32768], '\x80\x00'),
+		('h', [32767], '\x7f\xff'),
+		
+		('H', [0], '\x00\x00'),
+		('H', [65535], '\xff\xff'),
+		
+		('n', [-1], '\xff\xff'),
+		('n', [0], '\x00\x00'),
+		('n', [65534], '\xff\xfe'),
+		
 		#32-bit integers
-		('i', (1,), '\x00\x00\x00\x01'), ('iiii', (0,-1,2**31-1,-(2**31)), '\x00\x00\x00\x00\xff\xff\xff\xff\x7f\xff\xff\xff\x80\x00\x00\x00'),
-		('I', (1,), '\x00\x00\x00\x01'), ('IIII', (0,1,2**16-1,2**32-1), '\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\xff\xff\xff\xff\xff\xff'),
-		('j', (1,), '\x00\x00\x00\x01'), ('jjjj', (0,-1,2**16-1,2**32-2), '\x00\x00\x00\x00\xff\xff\xff\xff\x00\x00\xff\xff\xff\xff\xff\xfe'),
+		('i', [-2**31], '\x80\x00\x00\x00'),
+		('i', [2**31-1], '\x7f\xff\xff\xff'),
+		
+		('I', [0], '\x00\x00\x00\x00'),
+		('I', [2**32-1], '\xff\xff\xff\xff'),
+		
+		('j', [-1], '\xff\xff\xff\xff'),
+		('j', [2**32-2], '\xff\xff\xff\xfe'),
+		
 		#64-bit integers
-		('q', (1,), '\x00\x00\x00\x00\x00\x00\x00\x01'),
-		('qqqq', (0,-1,2**63-1,-(2**63)), '\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\x7f\xff\xff\xff\xff\xff\xff\xff\x80\x00\x00\x00\x00\x00\x00\x00'),
-		('Q', (1,), '\x00\x00\x00\x00\x00\x00\x00\x01'),
-		('QQQQ', (0,1,2**16-1,2**64-1), '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff'),
-		('p', (1,), '\x00\x00\x00\x00\x00\x00\x00\x01'),
-		('pppp', (0,-1,2**16-1,2**64-2), '\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xfe'),
+		('q', [-2**63], '\x80\x00\x00\x00\x00\x00\x00\x00'),
+		('q', [2**63-1], '\x7f\xff\xff\xff\xff\xff\xff\xff'),
+		
+		('Q', [0], '\x00\x00\x00\x00\x00\x00\x00\x00'),
+		('Q', [2**64-1], '\xff\xff\xff\xff\xff\xff\xff\xff'),
+		
+		('p', [-1], '\xff\xff\xff\xff\xff\xff\xff\xff'),
+		('p', [2**64-2], '\xff\xff\xff\xff\xff\xff\xff\xfe'),
+		
 		#floats
-		('f', (1.,), '?\x80\x00\x00'), ('ffff', (-2.**127, -2.**-149, 2.**-149, 2.**127), '\xff\x00\x00\x00\x80\x00\x00\x01\x00\x00\x00\x01\x7f\x00\x00\x00'),
-		('d', (1.,), '?\xf0\x00\x00\x00\x00\x00\x00'),
-		('dddd', (-2.**1023, -2.**-1074, 2.**-1074, 2.**1023), '\xff\xe0\x00\x00\x00\x00\x00\x00\x80\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x01\x7f\xe0\x00\x00\x00\x00\x00\x00'),
+		('f', [-2.**127], '\xff\x00\x00\x00'),
+		('f', [-2.**-149], '\x80\x00\x00\x01'),
+		('f', [2.**-149], '\x00\x00\x00\x01'),
+		('f', [2.**127], '\x7f\x00\x00\x00'),
+		
+		('d', [-2.**1023], '\xff\xe0\x00\x00\x00\x00\x00\x00'),
+		('d', [-2.**-1074], '\x80\x00\x00\x00\x00\x00\x00\x01'),
+		('d', [2.**-1074], '\x00\x00\x00\x00\x00\x00\x00\x01'),
+		('d', [2.**1023], '\x7f\xe0\x00\x00\x00\x00\x00\x00'),
+
 		#timestamps
-		('t', (datetime.fromtimestamp(0),), '\x00\x00\x00\x00'),
-		('T', (datetime.fromtimestamp(0),), '\x00\x00\x00\x00\x00\x00\x00\x00'),
+		('t', [datetime.fromtimestamp(0)], '\x00\x00\x00\x00'),
+		('T', [datetime.fromtimestamp(0)], '\x00\x00\x00\x00\x00\x00\x00\x00'),
 		]
 	
-	for i, j, k in tests:
-		assert pack(i, *j) == k, "Packing %s with %s should have given %s, but instead gave %s" % (j, i, k, pack(i, *j))
-		assert unpack(i, k)[0] == j, "Unpacking %s with %s should have given %s, but instead gave %s" % (k, i, j, unpack(i, *j)[0])
-		assert unpack(i, pack(i, *j))[0] == j, "Packing and unpacking %s with %s, but got %s" % (j, i, unpack(i, pack(i, *j))[0])
+	for structure, values, string in tests:
+		assert pack(structure, *values) == string,\
+			"Packing %s with %s should have given %s, but instead gave %s" % (values, structure, `string`, `pack(structure, *values)`)
+		assert unpack(structure, string)[0] == tuple(values),\
+			"Unpacking %s with %s should have given %s, but instead gave %s" % (`string`, structure, tuple(values), unpack(structure, *values)[0])
+		assert unpack(structure, pack(structure, *values))[0] == tuple(values),\
+			"Packing and unpacking %s with %s, but got %s" % (tuple(values), structure, unpack(structure, pack(structure, *values))[0])
 		#we need to store this in a variable to use the unpack operator
-		t = unpack(i, k)[0]
-		assert pack(i, *t) == k, "Unpacking and packing %s with %s, but got %s" % (k, i, pack(i, *t))
+		t = unpack(structure, string)[0]
+		assert pack(structure, *t) == string,\
+			"Unpacking and packing %s with %s, but got %s" % (string, structure, pack(structure, *t))
 
 if __name__ == '__main__':
 	test_pack_unpack()
