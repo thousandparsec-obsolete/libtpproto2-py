@@ -65,6 +65,7 @@ _calcsize = struct.calcsize
 
 semi = {'n':(16, 'H'), 'j':(32, 'I'), 'p':(64, 'Q')}
 smallints = "njbBhHiI"
+ints = {'b':8, 'B':8, 'h':16, 'H':16, 'i':32, 'I':32, 'q':64, 'Q':64}
 times = {'T':'Q', 't':'I'}
 
 def hexbyte(string):
@@ -154,13 +155,24 @@ def pack(sstruct, *aargs):
 					raise TypeError("Argument should be an int or long (to pack to %s), not a %s" % (char, type(a)))
 
 				if char in semi.keys():
-					if a == -1:
+					if a < -1:
+						raise ValueError("Argument must be greater than or equal to -1 (to pack to %s) not %s" % (char, a))
+					elif  a >= 2**semi[char][0]-1:
+						raise ValueError("Argument must be less than %s (to pack to %s) not %s" % (2**semi[char][0]-1, char, a))
+					elif a == -1:
 						a = 2**semi[char][0]-1
 					
 					char = semi[char][1]
-				elif char.upper() == char and a < 0:
-					raise TypeError("Argument must be positive (to pack to %s) not %s" % (char, a))
-
+				elif char in ints and char.upper() == char:
+					if a < 0:
+						raise ValueError("Argument must be nonnegative (to pack to %s) not %s" % (char, a))
+					elif a > 2**ints[char]-1:
+						raise ValueError("Argument must be no greater than %s (to pack to %s) not %s" % (2**ints[char]-1, char, a))
+				elif char in ints:
+					if a < -2**(ints[char]-1):
+						raise ValueError("Argument must be no less than %s (to pack to %s) not %s" % (-2**(ints[char]-1), char, a))
+					elif a > 2**(ints[char]-1)-1:
+						raise ValueError("Argument must be no greater than %s (to pack to %s) not %s" % (2**(ints[char]-1)-1, char, a))
 				try:
 					output += _pack("!"+char, a)
 				except _error, e:

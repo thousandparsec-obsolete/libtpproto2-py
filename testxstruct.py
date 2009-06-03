@@ -5,12 +5,12 @@ from datetime import datetime
 
 from tp.netlib.xstruct import *
 
-def now():
-	"""\
-	This function is needed because xstruct's representation is only accurate to the second
-	"""
-	time = datetime.now()
-	return datetime(time.year, time.month, time.day, time.hour, time.minute, time.second)
+def fails(function, *args):
+	try:
+		function(*args)
+		return False
+	except (TypeError, ValueError):
+		return True
 
 def test_pack_unpack():
 	#these are all tuples of (structure, values, string representation)
@@ -101,6 +101,98 @@ def test_pack_unpack():
 		t = unpack(structure, string)[0]
 		assert pack(structure, *t) == string,\
 			"Unpacking and packing %s with %s, but got %s" % (string, structure, pack(structure, *t))
+	
+	
+	#tuples of (structure, values) which should cause an exception to be thrown when passed to pack
+	failureTests = [
+		#characters
+		('c', []),
+		('c', [392]),
+		('c', [u'中']),
+		
+		('s', [392]),
+		('s', [u'中']),
+		
+		#8-bit ints
+		('b', ['']),
+		('b', [1024.]),
+		('b', [-129]),
+		('b', [128]),
+		
+		('B', ['']),
+		('B', [1024.]),
+		('B', [-1]),
+		('B', [256]),
+		
+		#16-bit ints
+		('h', ['']),
+		('h', [1024.]),
+		('h', [-32769]),
+		('h', [32768]),
+		
+		('H', ['']),
+		('H', [1024.]),
+		('H', [-1]),
+		('H', [65536]),
+		
+		('n', ['']),
+		('n', [1024.]),
+		('n', [-2]),
+		('n', [65535]),
+		
+		#32-bit ints
+		('i', ['']),
+		('i', [1024.]),
+		('i', [-2**31-1]),
+		('i', [2**31]),
+		
+		('I', ['']),
+		('I', [1024.]),
+		('I', [-1]),
+		('I', [2**32]),
+		
+		('j', ['']),
+		('j', [1024.]),
+		('j', [-2]),
+		('j', [2**32-1]),
+		
+		#64-bit ints
+		('q', ['']),
+		('q', [1024.]),
+		('q', [-2**63-1]),
+		('q', [2**63]),
+		
+		('Q', ['']),
+		('Q', [1024.]),
+		('Q', [-1]),
+		('Q', [2**64]),
+		
+		('p', ['']),
+		('p', [1024.]),
+		('p', [-2]),
+		('p', [2**64-1]),
+		
+		#floats
+		('f', ['']),
+		
+		('d', ['']),
+		
+		#timestamps
+		('t', ['']),
+		
+		('T', ['']),
+		
+		#lists
+		('[]', [1]),
+		
+		#strings
+		('S', [1]),
+		('S', [.5]),
+		('S', []),
+		]
+		
+	for structure, values in failureTests:
+		assert fails(pack, structure, *values), "Packing %s into %s should raise an exception, but it did not." % (values, structure)
 
 if __name__ == '__main__':
 	test_pack_unpack()
