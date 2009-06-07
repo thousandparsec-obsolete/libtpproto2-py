@@ -99,15 +99,13 @@ def pack(sstruct, *aargs):
 		while len(struct) > 0:
 			char = struct[0]
 			struct = struct[1:]
-			if len(args) == 0:
-				raise TypeError("Ran out of arguments, still had %s%s left of the structure" % (char, struct))
 
 			if char == ' ' or char == '!':
 				continue
 			elif char == '{':
 				# Find the closing brace
 				substruct, struct = string.split(struct, '}', maxsplit=1)
-				output += pack_list('L', substruct, args.pop(0))
+				output += pack_list('Q', substruct, args.pop(0))
 			elif char == '[':
 				# Find the closing brace
 				substruct, struct = string.split(struct, ']', maxsplit=1)
@@ -180,11 +178,16 @@ def pack(sstruct, *aargs):
 					#print "Struct", char, "Args '%s'" % (a,)
 					raise
 	
-	except (TypeError, _error), e:
+	except TypeError, e:
 		traceback = sys.exc_info()[2]
 		while not traceback.tb_next is None:
 			traceback = traceback.tb_next
 		raise TypeError, "%i argument was the cause ('%s', %s)\n\t%s" % (len(aargs)-len(args)-1, sstruct, repr(aargs)[1:-1], str(e).replace('\n', '\n\t')), traceback
+	except IndexError, e:
+		traceback = sys.exc_info()[2]
+		while not traceback.tb_next is None:
+			traceback = traceback.tb_next
+		raise TypeError, "Ran out of arguments, still had %s%s left of the structure" % (char, struct), traceback
 	
 	if len(args) > 0:
 		raise TypeError("Had too many arguments! Still got the following remaining %r" % args)
@@ -210,7 +213,7 @@ def unpack(struct, s):
 		elif char == '{':
 			# Find the closing brace
 			substruct, struct = string.split(struct, '}', maxsplit=1)
-			data, s = unpack_list("L", substruct, s)
+			data, s = unpack_list("Q", substruct, s)
 			
 			output.append(data)
 		elif char == '[':
