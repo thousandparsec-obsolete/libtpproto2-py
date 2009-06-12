@@ -1,3 +1,6 @@
+from types import IntType, LongType
+
+from Structure import Structure
 
 class IntegerStructure(Structure):
 	sizes = {
@@ -48,6 +51,8 @@ class IntegerStructure(Structure):
 		
 		if value > max:
 			raise ValueError("Value is too big! Must be smaller then %i" % max)
+		
+		return True
 			
 	def length(self, value):
 		return self.size / 8
@@ -57,7 +62,7 @@ class IntegerStructure(Structure):
 			xstruct = self.sizes[self.size][0]
 		elif self.type == "unsigned":
 			xstruct = self.sizes[self.size][1]
-		elif type == "semesigned":
+		elif self.type == "semisigned":
 			xstruct = self.sizes[self.size][2]
 		return xstruct
 	xstruct = property(xstruct)

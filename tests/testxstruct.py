@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import sys
+sys.path.insert(0, '..')
+
 from datetime import datetime
 import unittest
 
@@ -211,12 +214,28 @@ class TestXstruct(unittest.TestCase):
 			('b', ''),
 			('-', 'abc'),
 			('S', '\x00\x00\x00\x01'),
+			['99s', ''],
+			['[99s]', '\x00\x00\x00\x01'],
 			
 			]
 		
 		for structure, string in unpackFailureTests:
 			#FIXME: There must be some way to get useful output if this fails
 			self.assertRaises(Exception, lambda: unpack(structure, string))
+	
+	#the following tests cover internal code functionality that can't normally be reached by the external functions
+	def test_hexbyte(self):
+		self.assertEqual(hexbyte("Az09"), "Az09")
+		self.assertEqual(hexbyte("\x0012\xff"), "\\x0012\\xff")
+	
+	def test_unpack_string(self):
+		self.assertEqual(unpack_string(""), ("", ""))
+		self.assertEqual(unpack_string("\x00\x00\x00\x01\x00"), ("", ""))
+		self.assertRaises(TypeError, unpack_string, "\x00")
+	
+	def test_unpack_time(self):
+		self.assertRaises(TypeError, unpack_time, "\x00", "I")
+		self.assertRaises(TypeError, unpack_time, "\x00\x00\x00\x00", "S")
 	
 
 

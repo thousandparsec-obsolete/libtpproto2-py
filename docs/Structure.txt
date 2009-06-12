@@ -1,0 +1,38 @@
+Reposted from http://tpproto2.blogspot.com/2009/06/how-structures-works.html
+
+
+Basics
+
+The structure classes all implement type-safe wrappers for data types. What this means for you is if your object has a StringStructure member, then  you can pretty much treat it just like a string. You can plug it in wherever you would need a string and you can set it to any string value. The difference is if you try to set it to a non-string value an exception will be thrown. In libtpproto2-py this is used to catch wrong values for types as soon as possible rather than when we attempt to send them over the protocol.
+
+How It Works
+
+To achieve these properties we essentially have to change how Python acts when a Structure is get or set on an instance of a class. Fortunately for us, Python provides tools for doing just this. The Structure classes all override the __get__ and __set__ methods. These methods are called when a member of a class is read from or written to respectively.  Each Structure stores a special variable in the class that contains the value it is storing. So, if have a StringStructure named "string" in an object A" and write to it, it first checks that the new value is a legal string. If this value is legal it stores it in A.__string. Likewise, when A.string is accessed, it actually returns A.__string.
+
+Group and List
+
+The above method works great for integers, times, and strings. This is because they may directly into an immutable Python type.  Group, however acts more like an object, having mutable members, and List acts like a list of groups.
+
+Suppose , for instance, an object A has a group g with a string s, and g returns a regular object with its members then:
+
+A.g.s = "string"
+
+Would modify s in the returned object, but this would not be reflected in A. Thus these mutable types need to return a more sophisticated object. We call this a Proxy.
+
+Groups and their Proxies
+
+A GroupProxy is created with awareness of what object it is a member of and what GroupStructure it proxies. It overrides __getattr__ and __setattr__ methods. These methods function like __get__ and __set__, but they belong to the parent object rather than the accessed child. These are overloaded to find the corresponding Structures within its Group.
+
+Because it is relatively easy with Groups for Structures at different levels to share a name, we use a more complex naming scheme. In the example before A.g.s stores its values in A.__g_s rather than A.__s. This, combined with each Group ensuring that no two members share a name, means any Group is guaranteed to have unique qualifiers for every child.
+
+The way Group achieves this is whenever it receives a name, for every child: it takes its own name, append an underscore, then adds the child's original name (stored as id in all Structures), and sets that as the child's new name. Notice that if any children are Groups this will propagate all the way down.  This is important since the children will exist before the parent, since they are passed to the parent's constructor. It's also important to use the child's original name or g.g.s's name will be "s", then prepend "g_" for "g_s", then prepend "g_g_" for "g_g_g_s".
+
+Lists and their Proxies
+
+Naming threatened to get even trickier with lists. Suppose We have a list, A.l where every element of the list is a string. Using groups method, a list of strings would all want to store their special data somewhere like A.__l_s, which would mean they would all end up with the same value. Rather than try to work the index into the name as well (and force some name propagation nightmares) Everything is stored under A.__l. A.__l is a list of objects which have only one member: a GroupStructure named "group".  The GroupStructure will contain whatever is stored in the list.  Everything in Group i will be stored in A.__l[i] and not have to worry about stepping on anyone's toes.
+
+ListProxies try to act as much like Python lists as possible. Rather than overriding __getattr__ and __setattr__ they override __getitem__ and __setitem__, which behave equivalently with indexing items in a list. Thus, when ListProxy.__getitem__(i) is called, it returns A.__l[i].group. This means it returns a GroupProxy, and can then access the members of the list following the rules set in GroupProxy.
+
+Shortcomings
+
+This method does its job well enough, essentially pushing strict typing on a loosely typed language without muddling the syntax, but it's not perfect. The biggest fault I can find with it right now is underscores in names can cause havoc. A structure named "getattr__" will overwrite its parent object's __getattr__ method and cause an exception to throw any time a member of the parent is read. Likewise clever usage of underscores could cause an object to share a qualifier with the child of  a group at its level. The answer for this within my project is that Thousand Parsec's protocol isn't trying to destroy its applications, so this shouldn't come up. This is not a good answer, however. More practical solutions could mean restricting underscores from structure names, or finding somewhere else to store the data. For now I'll leave that for future generations to ponder. 

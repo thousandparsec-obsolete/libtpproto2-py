@@ -1,6 +1,8 @@
+from Structure import Structure
 
 import time
 from datetime import datetime
+
 class DateTimeStructure(Structure):
 	sizes = {
 		32: ('t'),
@@ -23,15 +25,21 @@ class DateTimeStructure(Structure):
 			raise ValueError("Value must be a datetime")
 
 		i = time.mktime(value.timetuple())
+		"""
+		The following lines are redundant as time.mktimes's range is 0-2**31-1
 		if i < 0:
-			raise ValueError("Value is too small! Must be bigger then %i" % min)
+			raise ValueError("Value is too small! Must be bigger then %i" % 0)
 		
-		if i > 2**self.size-1:
-			raise ValueError("Value is too big! Must be smaller then %i" % max)
+		#if i > 2**self.size-1:
+		#Due to limitations of Python's datetime. See xstruct.py for details.
+		if i > 2**31-1:
+			raise ValueError("Value is too big! Must be smaller then %i" % 2**31-1)
+		"""
+		return True
 	
 	def length(self, value):
 		return self.size / 8
 	
 	def xstruct(self):
-		xstruct = self.sizes[self.size][0]
+		return self.sizes[self.size][0]
 	xstruct = property(xstruct)

@@ -259,11 +259,7 @@ def unpack(struct, s):
 			if size > len(s):
 				raise TypeError("Not enough data for %s, needed %s bytes got %r (%s bytes)" % (substruct[1:], size, s, len(s)))
 
-			try:
-				data = _unpack(substruct, s[:size])
-			except _error, e:
-				print "Struct", substruct, "Args '%s'" % (s[:size],)
-				raise
+			data = _unpack(substruct, s[:size])
 			s = s[size:]
 
 			if char in semi.keys():
@@ -382,9 +378,6 @@ def unpack_time(s, type='I'):
 		(l,), s = unpack("!"+type, s)
 	except TypeError, e:
 		raise TypeError("Problem unpacking time: %s" % e)
-
-	if l < 0:
-		return None
 	return datetime.fromtimestamp(l), s
 
 def pack_time(t, type='I'):
@@ -393,14 +386,8 @@ def pack_time(t, type='I'):
 
 	Returns the datetime object and any remaining data.
 	"""
-	if t is None:
-		t = -1
-	elif isinstance(t, datetime):
+	if isinstance(t, datetime):
 		t = long(time.mktime(t.timetuple()))
-	elif isinstance(t, float):
-		# FIXME: This should be a depreciated warning...
-		print "Warning! pack_time called with float"
-		t = long(t)
 	elif not isinstance(t, (int, long)):
 		raise TypeError("Not a valid type for pack_time")
 	s = pack("!"+type, t)

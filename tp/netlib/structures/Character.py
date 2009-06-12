@@ -1,3 +1,5 @@
+from String import StringStructure
+from Structure import Structure
 
 class CharacterStructure(StringStructure):
 	def __init__(self, *args, **kw):
@@ -12,12 +14,11 @@ class CharacterStructure(StringStructure):
 		StringStructure.check(self, value)
 		if len(value) != self.size:
 			raise ValueError("Value is not the correct size! Must be length %i" % self.size)
+		return True
 			
 	def length(self, value):
 		return self.size
 	
 	def xstruct(self):
-		if self.size == 1:
-			return 'c'
 		return str(self.size)+'s'
 	xstruct = property(xstruct)

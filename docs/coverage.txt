@@ -1,0 +1,4 @@
+To generate a coverage run test.sh in the topmost directory. html reports will be placed in the html directory.
+
+The script assumes you have Ned Batchelder's coverage utility (version 3 beta or higher) installed at time of writing the latest version can be obtained at:
+http://nedbatchelder.com/blog/200905/coverage_v30_beta_3.html
