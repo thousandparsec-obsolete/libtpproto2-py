@@ -30,8 +30,9 @@ Extra stuff defined by this module:
  n	SInt16			(16 bit semi-signed integer)
  j	SInt32			(32 bit semi-signed integer)
  p	SInt64			(64 bit semi-signed integer)
- t	timestamp		(32 bit unsigned integer) 
+ t	timestamp		(32 bit unsigned integer)
  T	timestamp		(64 bit unsigned integer)
+ x  callback 		call a function back to decode section
  
 The structure of the data in the list is described by the data inside the
 brackets.
@@ -85,11 +86,30 @@ def hexbyte(string):
 #		s += " "
 	return s
 
-def pack(sstruct, *aargs):
+def smartsplit(struct, openbrace, closebrace):
+	pos = 0
+	open = 1
+	while open > 0:
+		if struct[pos] == openbrace:
+			open += 1
+		if struct[pos] == closebrace:
+			open -= 1
+
+		pos += 1
+
+	return struct[:pos-1], struct[pos:]
+
+noarg = "0123456789 !x"
+def pack(sstruct, *aargs, **kkw):
 	"""\
 	Takes a structure string and the arguments to pack in the format
 	specified by string.
 	"""
+	try:
+		callback = kkw['callback']
+	except KeyError:
+		callback = None
+
 	struct  = sstruct
 	args    = list(aargs)
 	args_no = len(aargs)
@@ -99,17 +119,22 @@ def pack(sstruct, *aargs):
 		while len(struct) > 0:
 			char = struct[0]
 			struct = struct[1:]
+			
+			if (not char in noarg) and len(args) == 0:
+				raise TypeError('Ran out of arguments, still had %s%s left of the structure' % (char, struct))
 
 			if char == ' ' or char == '!':
 				continue
 			elif char == '{':
+
 				# Find the closing brace
-				substruct, struct = string.split(struct, '}', maxsplit=1)
-				output += pack_list('Q', substruct, args.pop(0))
+				substruct, struct = smartsplit(struct, '{', '}')
+				output += pack_list('Q', substruct, args.pop(0), callback)
 			elif char == '[':
+				substruct, struct = smartsplit(struct, '[', ']')
+
 				# Find the closing brace
-				substruct, struct = string.split(struct, ']', maxsplit=1)
-				output += pack_list('I', substruct, args.pop(0))
+				output += pack_list('I', substruct, args.pop(0), callback)
 			elif char in 'Tt':
 				output += pack_time(args.pop(0), times[char])
 			elif char == 'S':
@@ -120,6 +145,8 @@ def pack(sstruct, *aargs):
 				output += _pack("!c", args.pop(0))
 			elif char in 'fd':
 				output += _pack('!' + char, args.pop(0))
+			elif char == 'x':
+				output += callback(args.pop(0))
 			elif char in string.digits:
 				# Get all the numbers
 				substruct = char
@@ -178,16 +205,11 @@ def pack(sstruct, *aargs):
 					#print "Struct", char, "Args '%s'" % (a,)
 					raise
 	
-	except TypeError, e:
+	except (TypeError, _error), e:
 		traceback = sys.exc_info()[2]
 		while not traceback.tb_next is None:
 			traceback = traceback.tb_next
-		raise TypeError, "%i argument was the cause ('%s', %s)\n\t%s" % (len(aargs)-len(args)-1, sstruct, repr(aargs)[1:-1], str(e).replace('\n', '\n\t')), traceback
-	except IndexError, e:
-		traceback = sys.exc_info()[2]
-		while not traceback.tb_next is None:
-			traceback = traceback.tb_next
-		raise TypeError, "Ran out of arguments, still had %s%s left of the structure" % (char, struct), traceback
+		raise TypeError, "%i argument was the cause ('%s' %s)\n\t%s" % (len(aargs)-len(args)-1, sstruct, repr(aargs)[1:-1], str(e).replace('\n', '\n\t')), traceback
 	
 	if len(args) > 0:
 		raise TypeError("Had too many arguments! Still got the following remaining %r" % args)
@@ -195,7 +217,7 @@ def pack(sstruct, *aargs):
 	return output
 
 
-def unpack(struct, s):
+def unpack(struct, s, callback=None):
 	"""\
 	Takes a structure string and a data string.
 
@@ -212,14 +234,14 @@ def unpack(struct, s):
 			continue
 		elif char == '{':
 			# Find the closing brace
-			substruct, struct = string.split(struct, '}', maxsplit=1)
-			data, s = unpack_list("Q", substruct, s)
+			substruct, struct = smartsplit(struct, '{', '}')
+			data, s = unpack_list("Q", substruct, s, callback)
 			
 			output.append(data)
 		elif char == '[':
 			# Find the closing brace
-			substruct, struct = string.split(struct, ']', maxsplit=1)
-			data, s = unpack_list("I", substruct, s)
+			substruct, struct = smartsplit(struct, '[', ']')
+			data, s = unpack_list("I", substruct, s, callback)
 			
 			output.append(data)
 		elif char in 'Tt':
@@ -249,6 +271,9 @@ def unpack(struct, s):
 			s = s[size:]
 
 			output += data
+		elif char == 'x':
+			o, s = callback(s)
+			output += o
 		else:
 			if char in semi.keys():
 				substruct = "!"+semi[char][1]
@@ -259,7 +284,11 @@ def unpack(struct, s):
 			if size > len(s):
 				raise TypeError("Not enough data for %s, needed %s bytes got %r (%s bytes)" % (substruct[1:], size, s, len(s)))
 
-			data = _unpack(substruct, s[:size])
+			try:
+				data = _unpack(substruct, s[:size])
+			except _error, e:
+				print "Struct", substruct, "Args '%s'" % (s[:size],)
+				raise
 			s = s[size:]
 
 			if char in semi.keys():
@@ -269,7 +298,7 @@ def unpack(struct, s):
 
 	return tuple(output), s
 
-def pack_list(length_struct, struct, args):
+def pack_list(length_struct, struct, args, callback):
 	"""\
 	*Internal*
 
@@ -277,30 +306,36 @@ def pack_list(length_struct, struct, args):
 	"""
 	# The length
 	output = pack(length_struct, len(args))
+	kw = {'callback':callback}
 
 	# The list
 	for id in args:
 		if type(id) == ListType or type(id) == TupleType:
-			args = [struct] + list(id)
-			output += apply(pack, args)
+			if struct[0] == '[' and len(smartsplit(struct[1:], '[', ']')[0]) == len(struct) - 2:
+				output += pack(struct, id, **kw)
+			elif struct[0] == '{' and len(smartsplit(struct[1:], '{', '}')[0]) == len(struct) - 2:
+				output += pack(struct, id, **kw)
+			else:
+				args = [struct] + list(id)
+				output += pack(*args, **kw)
 		else:
-			output += pack(struct, id)
+			output += pack(struct, id, **kw)
 		
 	return output
 
-def unpack_list(length_struct, struct, s):
+def unpack_list(length_struct, struct, s, callback=None):
 	"""\
 	*Internal*
 
 	Returns the first string from the input data and any remaining data.
 	"""
-	output, s = unpack(length_struct, s)
+	output, s = unpack(length_struct, s, callback)
 	length, = output
 
 	list = []
 	for i in range(0, length):
 		try:
-			output, s = unpack(struct, s)
+			output, s = unpack(struct, s, callback)
 		except TypeError, e:
 			raise TypeError("Problem unpacking list item (index %s): %s" % (i, e))
 

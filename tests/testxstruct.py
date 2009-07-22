@@ -77,10 +77,14 @@ class TestXstruct(unittest.TestCase):
 			('[]', [[]], '\x00\x00\x00\x00'),
 			('[b]', [[0]], '\x00\x00\x00\x01\x00'),
 			('[bb]', [[(0, 0), (0, 0)]], '\x00\x00\x00\x02\x00\x00\x00\x00'),
+			('[[b]]', [ [[0]] ], '\x00\x00\x00\x01\x00\x00\x00\x01\x00'),
+			('[[b]]', [ [[0],[0]] ], '\x00\x00\x00\x02\x00\x00\x00\x01\x00\x00\x00\x00\x01\x00'),
 			
 			('{}', [[]], '\x00\x00\x00\x00\x00\x00\x00\x00'),
 			('{b}', [[0]], '\x00\x00\x00\x00\x00\x00\x00\x01\x00'),
 			('{bb}', [[(0, 0), (0, 0)]], '\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00'),
+			('{{b}}', [ [[0]] ], '\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x01\x00'),
+			('{{b}}', [ [[0],[0]] ], '\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00'),
 			
 			#strings
 			('S', [''], '\x00\x00\x00\x00'),
@@ -236,6 +240,10 @@ class TestXstruct(unittest.TestCase):
 	def test_unpack_time(self):
 		self.assertRaises(TypeError, unpack_time, "\x00", "I")
 		self.assertRaises(TypeError, unpack_time, "\x00\x00\x00\x00", "S")
+	
+	def test_callback(self):
+		self.assertEquals(pack('x', 97, callback=chr), 'a')
+		self.assertEquals(unpack('x', 'a', callback=lambda x:([ord(x[0])], x[1:])), ((97,), ''))
 	
 
 
