@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!DOCTYPE protocol SYSTEM "protocol.dtd">
-<protocol version="TP04">
+<protocol version="TP03">
 	<parameterset name="OrderParams">
 		<longname>Order Parameters</longname>
 		<description>These are the parameters for Orders and OrderDescriptions.</description>
@@ -54,19 +54,6 @@
 						<longname>Object ID</longname>
 						<description>The object's Id number.</description>
 					</integer>
-					<list readonly="yes">
-						<name>validtypes</name>
-						<longname>List of valid object types</longname>
-						<description>List of the valid object types which can be chosen.</description>
-						<structure>
-							<integer type="unsigned" size="32">
-								<name>validtype</name>
-								<longname>Valid Object Type</longname>
-								<description>A valid object type for the chosen Object ID.</description>
-							</integer>
-						</structure>
-						<note>An empty list indicates that all types are valid.</note>
-					</list>
 				</structure>
 			</usestruct>
 		</parameter>
@@ -271,425 +258,120 @@
 				</structure>
 			</usestruct>
 		</parameter>
-                <parameter name="orderParamResourceList" type="10">
-			<longname>Resource List</longname>
-                        <description>A list of resources to be deal with by the order.</description>
-                        <usestruct>
-                                <structure>
-                                        <list>
-                                              <name>allowed</name>
-                                              <longname>Allowed Resources</longname>
-                                              <description>The list of possible resources and allowable maximums.</description>
-                                              <structure>
-                                                      <integer type="unsigned" size="32" readonly="yes">
-                                                              <name>resourcetype</name>
-                                                              <longname>Resource type</longname>
-                                                              <description>An allowed resource type</description>
-                                                      </integer>
-                                                      <integer type="unsigned" size="32" readonly="yes">
-                                                              <name>max</name>
-                                                              <longname>Maximum Quantity</longname>
-                                                              <description>The maximum quantity allowed for this resource type.</description>
-                                                      </integer>
-                                              </structure>
-                                        </list>
-                                        <integer type="unsigned" size="32" readonly="yes">
-                                              <name>maxmass</name>
-                                              <longname>Maximum Mass</longname>
-                                              <description>The maximum mass allowed.</description>
-                                        </integer>
-                                        <integer type="unsigned" size="32" readonly="yes">
-                                              <name>maxvolument</name>
-                                              <longname>Maximum Volume</longname>
-                                              <description>The maximum volume allowed.</description>
-                                        </integer>
-                                        <list>
-                                              <name>selected</name>
-                                              <longname>Selected Resources</longname>
-                                              <description>The list of the selected Resources and quantities.</description>
-                                              <structure>
-                                                      <integer type="unsigned" size="32" readonly="yes">
-                                                              <name>resourcetype</name>
-                                                              <longname>Resource type</longname>
-                                                              <description>A selected resource type</description>
-                                                      </integer>
-                                                      <integer type="unsigned" size="32" readonly="yes">
-                                                              <name>quantity</name>
-                                                              <longname>Quantity</longname>
-                                                              <description>The selected quantity of this resource type.</description>
-                                                      </integer>
-                                              </structure>
-                                        </list>
-                                </structure>
-                        </usestruct>
-                </parameter>
-                <parameter name="orderParamGenericReferenceQuantityList" type="11">
-                        <longname>Generic Reference Quantity List</longname>
-                        <description>A quantity selection list of generic references.</description>
-                        <usestruct>
-                                <structure>
-                                        <list readonly="yes">
-                                                <name>weightmaximums</name>
-                                                <longname>List of Weight Maximums</longname>
-                                                <description>Defines the maximums for the various weights.</description>
-                                                <structure>
-                                                        <integer type="unsigned" size="32" readonly="yes">
-                                                                <name>max</name>
-                                                                <longname>Maximum</longname>
-                                                                <description>The maximum for the given this weight.</description>
-                                                        </integer>
-                                                        <list readonly="yes">
-                                                                <name>reflist</name>
-                                                                <longname>Reference List</longname>
-                                                                <description>The list of references that this weight limit refers to.</description>
-                                                                <structure>
-                                                                        <integer type="signed" size="32" readonly="yes">
-                                                                                <name>reftype</name>
-                                                                                <longname>Reference Type</longname>
-                                                                                <description>type of thing being referenced</description>
-                                                                        </integer>
-                                                                        <integer type="unsigned" size="32" readonly="yes">
-                                                                                <name>refid</name>
-                                                                                <longname>Reference ID</longname>
-                                                                                <description>The ID of the thing referenced</description>
-                                                                        </integer>
-                                                                </structure>
-                                                        </list>
-                                                </structure>
-                                        </list>
-                                        <list readonly="yes">
-                                                <name>possibles</name>
-                                                <longname>List of possible selections</longname>
-                                                <description>This list defines the types of things that can be selected, weights and maximums.</description>
-                                                <structure>
-                                                        <integer type="unsigned" size="32" readonly="yes">
-                                                                <name>optionid</name>
-                                                                <longname>Option Id</longname>
-                                                                <description>The id that is option has.</description>
-                                                        </integer>
-                                                        <string readonly="yes">
-                                                                <name>name</name>
-                                                                <longname>Name</longname>
-                                                                <description>The name of this option.</description>
-                                                        </string>
-                                                        <integer type="semisigned" size="32" readonly="yes">
-                                                                <name>max</name>
-                                                                <longname>Maximum</longname>
-                                                                <description>The maximum that can be selected</description>
-                                                                <note>-1 is no limit.</note>
-                                                        </integer>
-                                                        <list readonly="yes">
-                                                                <name>reflist</name>
-                                                                <longname>Reference List</longname>
-                                                                <description>The list of references that this option refers to.</description>
-                                                                <structure>
-                                                                        <integer type="signed" size="32" readonly="yes">
-                                                                                <name>reftype</name>
-                                                                                <longname>Reference Type</longname>
-                                                                                <description>type of thing being referenced</description>
-                                                                        </integer>
-                                                                        <integer type="unsigned" size="32" readonly="yes">
-                                                                                <name>refid</name>
-                                                                                <longname>Reference ID</longname>
-                                                                                <description>The ID of the thing referenced</description>
-                                                                        </integer>
-                                                                </structure>
-                                                        </list>
-                                                        <list readonly="yes">
-                                                                <name>weights</name>
-                                                                <longname>List of Weights</longname>
-                                                                <description>The list of weights for this option.</description>
-                                                                <structure>
-                                                                        <integer type="unsigned" size="32" readonly="yes">
-                                                                                <name>weight</name>
-                                                                                <longname>Weight</longname>
-                                                                                <description>The weight for this option for the corresponding maximum weight in the same position in the list.</description>
-                                                                        </integer>
-                                                                </structure>
-                                                                <note>This list is &lt;strong&gt;always&lt;/strong&gt; the same length as the List of Weight Maximums.</note>
-                                                        </list>
-                                                </structure>
-                                        </list>
-                                        <list>
-						<name>selection</name>
-						<longname>The Selection</longname>
-						<description>A list of the items which have been selected.</description>
-						<structure>
-							<integer type="unsigned" size="32">
-								<name>id</name>
-								<longname>ID</longname>
-								<description>ID of what is selected</description>
-							</integer>
-							<integer type="unsigned" size="32">
-								<name>number</name>
-								<longname>Number Selected</longname>
-								<description>The number of this item which have been selected</description>
-							</integer>
-						</structure>
-					</list>
-                                </structure>
-                        </usestruct>
-                </parameter>
 	</parameterset>
 	<parameterset name="ObjectParams">
-		<longname>Object Parameters</longname>
-		<description>These are the parameters for Objects.</description>
-		<parameter name="objectParamPosition3d" type="0">
-			<longname>Position in 3D</longname>
-			<description>A vector for the position.</description>
+		<longname>Game Objects</longname>
+		<description>These are the "parameters" that define structures of Objects.</description>
+		<parameter name="Universe" type="0">
+			<longname>the Universe</longname>
 			<usestruct>
 				<structure>
-					<group>
-						<name>position</name>
-						<longname>Position</longname>
-						<structure>
-							<integer type="signed" size="64" readonly="yes">
-								<name>x</name>
-							</integer>
-							<integer type="signed" size="64" readonly="yes">
-								<name>y</name>
-							</integer>
-							<integer type="signed" size="64" readonly="yes">
-								<name>z</name>
-							</integer>
-						</structure>
-					</group>
-					<integer type="unsigned" size="32" readonly="yes">
-						<name>relative</name>
-						<longname>Relative to Object ID</longname>
-						<description>The object ID this position is relative to.</description>
+					<integer type="unsigned" readonly="yes" size="32">
+						<name>age</name>
+						<longname>the current year/turn number</longname>
 					</integer>
 				</structure>
 			</usestruct>
 		</parameter>
-		<parameter name="objectParamVelocity3d" type="1">
-			<longname>Velocity in 3D</longname>
-			<description>A vector for the velocity.</description>
+		<parameter name="Galaxy" type="1">
+			<longname>a galaxy, a collection of star systems</longname>
 			<usestruct>
 				<structure>
-					<group>
-						<name>velocity</name>
-						<longname>Velocity</longname>
-						<structure>
-							<integer type="signed" size="64" readonly="yes">
-								<name>x</name>
-							</integer>
-							<integer type="signed" size="64" readonly="yes">
-								<name>y</name>
-							</integer>
-							<integer type="signed" size="64" readonly="yes">
-								<name>z</name>
-							</integer>
-						</structure>
-					</group>
-					<integer type="unsigned" size="32" readonly="yes">
-						<name>relative</name>
-						<longname>Relative to Object ID</longname>
-						<description>The object ID this vector is relative to.</description>
-					</integer>
+					<!-- empty -->
 				</structure>
 			</usestruct>
 		</parameter>
-		<parameter name="objectParamAcceleration3d" type="2">
-			<longname>Acceleration in 3D</longname>
-			<description>A vector for the acceleration.</description>
+		<parameter name="StarSystem" type="2">
+			<longname>a star system, a collection of planets</longname>
 			<usestruct>
 				<structure>
-					<group>
-						<name>vector</name>
-						<longname>Vector</longname>
-						<structure>
-							<integer type="signed" size="64" readonly="yes">
-								<name>x</name>
-							</integer>
-							<integer type="signed" size="64" readonly="yes">
-								<name>y</name>
-							</integer>
-							<integer type="signed" size="64" readonly="yes">
-								<name>z</name>
-							</integer>
-						</structure>
-					</group>
-					<integer type="unsigned" size="32" readonly="yes">
-						<name>relative</name>
-						<longname>Relative to Object ID</longname>
-						<description>The object ID this vector is relative to.</description>
-					</integer>
+					<!-- empty -->
 				</structure>
 			</usestruct>
 		</parameter>
-		<parameter name="objectParamBoundPosition" type="3">
-			<longname>Bound Position</longname>
-			<description>Object is bound to ('in') an Object.</description>
+		<parameter name="Planet" type="3">
+			<longname>a celestial object that can be inhabited</longname>
 			<usestruct>
 				<structure>
-					<integer type="signed" size="32" readonly="yes">
-						<name>slot</name>
-						<longname>Slot</longname>
-						<description>The slot in the parent object this object is in.</description>
+					<integer type="semisigned" readonly="yes" size="32">
+						<name>owner</name>
+						<longname>the id of the player who "owns" this planet or -1 if not owned or unknown</longname>
 					</integer>
-				</structure>
-			</usestruct>
-		</parameter>
-		<parameter name="objectParamOrderQueue" type="4">
-			<longname>Order Queue</longname>
-			<description>An order queue.</description>
-			<descstruct>
-				<structure>
-					<integer type="unsigned" size="32" readonly="yes">
-						<name>maxslots</name>
-						<longname>Maximum slots</longname>
-						<description>The maximum number of slots that can be used in this queue.</description>
-					</integer>
-				</structure>
-			</descstruct>
-			<usestruct>
-				<structure>
-					<integer type="unsigned" size="32" readonly="yes">
-						<name>queueid</name>
-						<longname>Queue ID</longname>
-						<description>The ID number of the queue.</description>
-					</integer>
-					<integer type="unsigned" size="32" readonly="yes">
-						<name>numorders</name>
-						<longname>Number of Orders</longname>
-						<description>The number of orders in the queue.</description>
-					</integer>
-					<list>
-						<name>ordertypes</name>
-						<longname>List of Order Types</longname>
-						<description>A list of order types that can be put in this queue.</description>
-						<structure>
-							<integer type="unsigned" size="32" readonly="yes">
-								<name>ordertype</name>
-								<longname>Order Type</longname>
-								<description>The number of the order type.</description>
-							</integer>
-						</structure>
-					</list>
-				</structure>
-			</usestruct>
-			<note>
-				Note: The number of orders should be the number of orders the person can see on the
-				object. Not the total number of orders on the object. 
-			</note>
-		</parameter>
-		<parameter name="objectParamResourceList" type="5">
-			<longname>Resource List</longname>
-			<description>A list of resources.</description>
-			<usestruct>
-				<structure>
 					<list>
 						<name>resources</name>
-						<longname>Resource List</longname>
-						<description>A list of resources.</description>
+						<longname>a list of resources available on this planet</longname>
 						<structure>
-							<integer type="unsigned" size="32" readonly="yes">
-								<name>resourceid</name>
-								<longname>Resource ID</longname>
-								<description>The Resource ID</description>
-							</integer>
-							<integer type="unsigned" size="32" readonly="yes">
-								<name>stored</name>
-								<longname>Stored Quantity</longname>
-								<description>The amount on hand currently.</description>
-							</integer>
-							<integer type="unsigned" size="32" readonly="yes">
-								<name>minable</name>
-								<longname>Minable Quantity</longname>
-								<description>The amount of the resource that is minable or creatable.</description>
-							</integer>
-							<integer type="unsigned" size="32" readonly="yes">
-								<name>unavailable</name>
-								<longname>Unavailable Quantity</longname>
-								<description>The amount that is not yet minable or creatable.</description>
-							</integer>
-						</structure>
-					</list>
-				</structure>
-			</usestruct>
-		</parameter>
-		<parameter name="objectParmReference" type="6">
-			<longname>Reference</longname>
-			<description>A generic reference to something.</description>
-			<usestruct>
-				<structure>
-					<integer type="signed" size="32">
-						<name>type</name>
-						<longname>Reference Type</longname>
-						<description>type of thing being referenced</description>
-					</integer>
-					<integer type="unsigned" size="32">
-						<name>id</name>
-						<longname>The ID of the thing referenced</longname>
-					</integer>
-				</structure>
-			</usestruct>
-		</parameter>
-		<parameter name="objectParamReferenceQuantityList" type="7">
-			<longname>Reference Quality List</longname>
-			<description>Gives a list of references and how many of each of them.</description>
-			<usestruct>
-				<structure>
-					<list>
-						<name>references</name>
-						<longname>References</longname>
-						<description>A list of as described in the Generic Reference System</description>
-						<structure>
-							<integer type="signed" size="32">
-								<name>type</name>
-								<longname>Reference Type</longname>
-								<description>type of thing being referenced</description>
-							</integer>
-							<integer type="unsigned" size="32">
+							<integer type="unsigned" readonly="yes" size="32">
 								<name>id</name>
-								<longname>The ID of the thing referenced</longname>
+								<longname>the resource id</longname>
 							</integer>
-							<integer type="unsigned" size="32">
-								<name>number</name>
-								<longname>The quantity of the referenced thing.</longname>
+							<integer type="unsigned" readonly="yes" size="32">
+								<name>units</name>
+								<longname>the units of this resource on the "surface"</longname>
+							</integer>
+							<integer type="unsigned" readonly="yes" size="32">
+								<name>unitsminable</name>
+								<longname>the maximum units of this resource remaining which are minable</longname>
+							</integer>
+							<integer type="unsigned" readonly="yes" size="32">
+								<name>unitsinaccessible</name>
+								<longname>the maximum units of this resource remaining which are inaccessable</longname>
 							</integer>
 						</structure>
 					</list>
 				</structure>
 			</usestruct>
 		</parameter>
-		<parameter name="objectParamInteger" type="8">
-			<longname>Integer</longname>
-			<description>An Integer, informational.</description>
+		<parameter name="Fleet" type="4">
+			<longname>a group of ships</longname>
 			<usestruct>
 				<structure>
-					<integer type="unsigned" size="32">
-						<name>intvalue</name>
-						<longname>Value</longname>
-						<description>The value of the integer parameter.</description>
+					<integer type="semisigned" readonly="yes" size="32">
+						<name>owner</name>
+						<longname>the id of the player who owns this fleet or -1 if not owned or unknown</longname>
+					</integer>
+					<list>
+						<name>ships</name>
+						<longname>a list of ships in this fleet</longname>
+						<structure>
+							<integer type="unsigned" readonly="yes" size="32">
+								<name>type</name>
+								<longname>the type of the ship</longname>
+							</integer>
+							<integer type="unsigned" readonly="yes" size="32">
+								<name>count</name>
+								<longname>the number of the ships in the fleet</longname>
+							</integer>
+						</structure>
+					</list>
+					<integer type="unsigned" readonly="yes" size="32">
+						<name>damage</name>
+						<longname>the amount of damage the fleet currently has</longname>
 					</integer>
 				</structure>
 			</usestruct>
 		</parameter>
-		<parameter name="objectParamSize" type="9">
-			<longname>Size</longname>
-			<description>The diameter of the object.</description>
+		<parameter name="Wormhole" type="5">
+			<longname>the Universe</longname>
+			<description>
+				The Wormhole is a top level object that links to locations together.
+				It was added as a quick hack to make the Risk ruleset a little easier to play.
+				It has 3 int64 arguments which are the "other end" of the wormhole.
+			</description>
 			<usestruct>
 				<structure>
-					<integer type="unsigned" size="64" readonly="yes">
-						<name>size</name>
-						<longname>Object Size</longname>
-						<description>The size of the object (diameter).</description>
+					<integer type="unsigned" readonly="yes" size="64">
+						<name>endx</name>
+						<longname>X coordinate of the other end</longname>
 					</integer>
-				</structure>
-			</usestruct>
-		</parameter>
-		<parameter name="objectParamMedia" type="10">
-			<longname>Media Url</longname>
-			<description>The url for the media for this object, either relative to the base url given in the Game frame, of absolute.</description>
-			<usestruct>
-				<structure>
-					<string readonly="yes">
-						<name>url</name>
-						<longname>Url</longname>
-						<description>The url for the media.</description>
-					</string>
+					<integer type="unsigned" readonly="yes" size="64">
+						<name>endy</name>
+						<longname>Y coordinate of the other end</longname>
+					</integer>
+					<integer type="unsigned" readonly="yes" size="64">
+						<name>endz</name>
+						<longname>Z coordinate of the other end</longname>
+					</integer>
 				</structure>
 			</usestruct>
 		</parameter>
@@ -699,23 +381,12 @@
 	<packet name="Header">
 		<direction>any</direction>
 		<structure>
-			<character size="2">
-				<name>magic</name>
-				<longname>Magic letters</longname>
-				<description>Always has value &amp;quot;TP&amp;quot;, no null terminator.</description>
-				<example>TP</example>
+			<character size="4">
+				<name>version</name>
+				<longname>Packet Version</longname>
+				<description>Always has value "TP03" ("TP" plus version number), no null terminator.</description>
+				<example>TP03</example>
 			</character>
-			<integer type="unsigned" size="8">
-				<name>protocolversion</name>
-				<longname>Protocol Version</longname>
-				<description>Always (binary) '4', for this protocol.</description>
-				<example>4</example>
-			</integer>
-			<integer type="unsigned" size="8">
-				<name>frameversion</name>
-				<longname>Frame Version</longname>
-				<description>Gives the version of the frame in the data of this frame. Defaults to '0'.</description>
-			</integer>
 			<integer type="unsigned" size="32">
 				<name>sequence</name>
 				<longname>Sequence Number</longname>
@@ -726,7 +397,7 @@
 				<name>type</name>
 				<longname>Type</longname>
 				<description>Type of packet</description>
-				<subtype/>
+				<subtype />
 				<example>2</example>
 			</integer>
 			<integer type="unsigned" size="32">
@@ -736,30 +407,10 @@
 				<example>32</example>
 			</integer>
 		</structure>
-		<failtype type="0">
-			<description>Unable to decode frame header correctly.</description>
-		</failtype>
-		<failtype type="1">
-			<description>Something was wrong with decoding the contents of the frame.</description>
-		</failtype>
-		<failtype type="5">
-			<description>This frame is now allowed.</description>
-		</failtype>
-		<failtype type="7">
-			<description>The version of the frame is not supported.</description>
-		</failtype>
-		<failtype type="8">
-			<description>The frame that was going to be sent was too large for the protocol.</description>
-		</failtype>
 	</packet>
 
-	<packet base="Header" name="Request">
-		<direction>server</direction>
-	</packet>
-	
-	<packet base="Header" name="Response">
-		<direction>client</direction>
-	</packet>
+	<packet base="Header" name="Request"></packet>
+	<packet base="Header" name="Response"></packet>
 
 	<packet base="Response" name="Okay" id="0">
 		<description>A request was successful in some sort of way.</description>
@@ -787,9 +438,6 @@
 					<value id="3" name="UnavailableTemporarily">Unavailable Temporarily, This operation is unavailable at this moment</value>
 					<value id="4" name="NoSuchThing">No Such Thing, The object/order/message does not exist</value>
 					<value id="5" name="PermissionDenied">Permission Denied, You don't have permission to do this operation</value>
-					<value id="6" name="Gone">Object/order/message has gone.</value>
-					<value id="7" name="FrameVersionNotSupported">The frame version is not supported</value>
-					<value id="8" name="RequestTooBig">The requested reply is too big</value>
 				</values>
 			</enumeration>
 			<string>
@@ -798,22 +446,6 @@
 				<description>Text message of the error.</description>
 				<example>Order was created successfully in slot 1.</example>
 			</string>
-			<list>
-				<name>references</name>
-				<longname>References</longname>
-				<description>A list of references that this error relates to.</description>
-				<structure>
-					<integer type="signed" size="32">
-						<name>type</name>
-						<longname>Reference Type</longname>
-						<description>type of thing being referenced</description>
-					</integer>
-					<integer type="unsigned" size="32">
-						<name>id</name>
-						<longname>The ID of the thing referenced</longname>
-					</integer>
-				</structure>
-			</list>
 		</structure>
 		<note>If the connect frame is not valid TP frame, this frame will not be returned, instead a plain text string will be sent saying that the wrong protocol has been used. A fail frame may be send if the wrong protocol version is detected. This does not affect clients as they should always get the connect frame right.</note>
 	</packet>
@@ -893,12 +525,6 @@
 			<longname>the number of IDs to get</longname>
 			<description>the number of IDs to get</description>
 		</integer>
-		<integer type="semisigned" size="64">
-			<name>from</name>
-			<longname>Get changes from</longname>
-			<description>The timestamp from which the changes should be pulled.</description>
-			<note>If -1, the list return are currently visible objects, otherwise deleted objects appear also.</note>
-		</integer>
 	</structure>
 	<note>
 			Requirements:
@@ -961,12 +587,6 @@
 				</integer>
 			</structure>
 		</list>
-		<integer type="semisigned" size="64">
-			<name>from</name>
-			<longname>Changes from</longname>
-			<description>The timestamp from which the changes are present.</description>
-			<note>If -1, the list has only currently visible objects, otherwise deleted objects appear also.</note>
-		</integer>
 	</structure>
 	<note>These IDs are not guaranteed to be in any order.</note>
 </packet>
@@ -976,7 +596,7 @@
 		<string>
 			<name>URI</name>
 			<longname>Universal Resource Identifier</longname>
-			<description/>
+			<description></description>
 		</string>
 	</structure>
 	<note>
@@ -1097,10 +717,6 @@
 						<value id="0x6" name="PropertyCalc">Support server side property calculation.</value>
 						
 						<value id="0x3E8" name="AccountCreate">Account creation is allowed.</value>
-						
-						<value id="0x1000" name="FilterSSL">SSL filter can be set up.</value>
-						<value id="0x1D00" name="FilterPadding">Padding filter can be set up.</value>
-						
 						<value id="0x10000" name="DescObjectID">Sends Object ID Sequences in descending modified time order.</value>
 						<value id="0x10001" name="DescOrderID">Sends Order Description ID Sequences in descending modified time order.</value>
 						<value id="0x10002" name="DescBoardID">Sends Board ID Sequences in descending modified time order.</value>
@@ -1110,56 +726,14 @@
 						<value id="0x10006" name="DescComponentID">Sends Component ID Sequences in descending modified time order.</value>
 						<value id="0x10007" name="DescPropertyID">Sends Property ID Sequences in descending modified time order.</value>
 					</values>
-					<note>
-						Optimizations are features which allow the clients to take certain shortcuts.
-						All optimization are highly optional. Optimizations have ids greater then 0xffff.
-					</note>
 				</enumeration>
 			</structure>
+			<note>
+				Optimizations are features which allow the clients to take certain shortcuts.
+				All optimization are highly optional. Optimizations have ids greater then 0xffff.
+			</note>
 		</list>
 	</structure>
-</packet>
-
-<packet base="Request" name="SetFilters" id="64">
-	<longname>Set Filters</longname>
-	<structure>
-		<list>
-			<name>filters</name>
-			<longname>Filters</longname>
-			<description>List of filters to set.</description>
-			<structure>
-				<enumeration type="unsigned" size="32" style="list">
-					<name>filter</name>
-					<longname>Filter to set</longname>
-					<description>The feature id of the filter to set</description>
-					<values>
-						<value id="0x1000" name="FilterSSL">SSL filter is to be set up.</value>
-						<value id="0x1D00" name="FilterPadding">Padding filter is to be set up.</value>
-					</values>
-				</enumeration>
-			</structure>
-		</list>
-	</structure>
-	<note>
-		&lt;ul&gt;
-		&lt;li&gt;The client will choose which filters are used.&lt;/li&gt;
-		&lt;li&gt;Server has "right of refusal".&lt;/li&gt;
-		&lt;li&gt;Filter negotiation can not be pipelined.&lt;/li&gt;
-		&lt;/ul&gt;
-		
-		An example session would be as follows, 
-		&lt;pre&gt;
-		Client  -- connect -----&amp;gt;  Server
-			&amp;lt;- okay ---------
-			-- get features &amp;gt;
-			&amp;lt;-- features ----
-			-- set filters -&amp;gt;
-			&amp;lt;-- okay --------
-		--- filters are activated here ---
-			&lt;/pre&gt;
-		If SSL filter is used it should always be the outer most filter. There should only be one compression filter in use.
-		
-	</note>
 </packet>
 
 
@@ -1173,226 +747,9 @@
 </packet>
 
 
-<packet base="Request" name="GetGames" id="65">
-	<longname>Get Games</longname>
-	<description>Gets the sequence of game frames available on this server.</description>
-</packet>
-
-<packet base="Response" name="Game" id="66">
-	<longname>Game</longname>
-	<description>Describes a game.</description>
-	<structure>
-		<string>
-			<name>name</name>
-			<longname>Long Name</longname>
-			<description>The long name for the game.</description>
-			<note>This string should never change for the length of the game</note>
-		</string>
-		<string>
-			<name>key</name>
-			<longname>Key</longname>
-			<description>The key for the game.</description>
-			<example>tp</example>
-			<note>Only sent to metaserver, send an empty string instead to clients.</note>
-		</string>
-		<list>
-			<name>tp</name>
-			<longname>Protocol Versions</longname>
-			<description>Supported protocol versions.</description>
-			<structure>
-				<!-- TODO: integer? otherwise, what's the format? -->
-				<string>
-					<name>proto</name>
-					<longname>Protocol version</longname>
-				</string>
-			</structure>
-		</list>
-		<string>
-			<name>server</name>
-			<longname>Server Version</longname>
-			<description>The version of the server.</description>
-		</string>
-		<string>
-			<name>sertype</name>
-			<longname>Server type</longname>
-			<description>The name of the server software.</description>
-		</string>
-		<string>
-			<name>rule</name>
-			<longname>Ruleset Name</longname>
-			<description>The name of the ruleset.</description>
-		</string>
-		<string>
-			<name>rulever</name>
-			<longname>Ruleset Version</longname>
-			<description>The version of the ruleset.</description>
-		</string>
-		<list>
-			<name>connections</name>
-			<longname>Connections</longname>
-			<description>List of available dns/ip/port and type information for the server.</description>
-			<structure>
-				<string>
-					<name>type</name>
-					<longname>Connection Type</longname>
-					<description>The type of connection (tp, tps,...)</description>
-				</string>
-				<string>
-					<name>dns</name>
-					<longname>DNS name</longname>
-					<description>Resolvable DNS name.</description>
-				</string>
-				<string>
-					<name>ip</name>
-					<longname>IP Address</longname>
-					<description>IP Address to connect to.</description>
-				</string>
-				<integer type="unsigned" size="32">
-					<name>port</name>
-					<longname>Port Number</longname>
-					<description>The port number to connect on.</description>
-				</integer>
-			</structure>
-		</list>
-		<list>
-			<name>parameters</name>
-			<longname>Optional Parameters</longname>
-			<description>List of optional parameters.</description>
-			<structure>
-				<enumeration type="unsigned" size="32" style="list">
-					<name>paramid</name>
-					<longname>Parameter ID</longname>
-					<description>The ID number for this parameter.</description>
-					<values>
-						<value id="1" name="plys">Number of players in the game.</value>
-						<value id="2" name="cons">Number of clients currently connected.</value>
-						<value id="3" name="objs">Number of &amp;quot;objects&amp;quot; in the game universe.</value>
-						<value id="4" name="admin">Admin email address.</value>
-						<value id="5" name="cmt">Comment about the game.</value>
-						<value id="6" name="next">Unix timestamp (GMT) when next turn is generated.</value>
-						<value id="7" name="ln">Human readable name (long name) of the game.</value>
-						<value id="8" name="sn">Short (computer) name of the game.</value>
-						<value id="9" name="turn">The current turn number.</value>
-						<value id="10" name="prd">The time between turns in seconds.</value>
-					</values>
-				</enumeration>
-				<string>
-					<name>stringvalue</name>
-					<longname>String Value</longname>
-					<description>The string value of this parameter, or empty if invalid.</description>
-				</string>
-				<integer type="unsigned" size="32">
-					<name>intvalue</name>
-					<longname>Integer Value</longname>
-					<description>The integer value of this parameter, or zero if invalid.</description>
-				</integer>
-			</structure>
-		</list>
-		<string>
-			<name>mediabase</name>
-			<longname>Media Base URL</longname>
-			<description>Specifies the base URL for media used in the game.</description>
-			<note>Metaserver doesn't know (or care) so this is empty.</note>
-		</string>
-	</structure>
-</packet>
-
-
-<packet id="67" base="GetWithID" name="GetObjectDesc">
-	<longname>Get Object Description</longname>
-</packet>
-
-
-<packet id="68" base="Response" name="ObjectDesc">
-	<longname>Object Description</longname>
-	<structure>
-		<integer type="unsigned" size="32">
-			<name>id</name>
-			<longname>object type</longname>
-			<description>object type</description>
-			<subtype/>
-		</integer>
-		<string>
-			<name>name</name>
-			<longname>Name</longname>
-			<description>Name of the object type.</description>
-		</string>
-		<string>
-			<name>description</name>
-			<longname>Description</longname>
-			<description>Description of the object type.</description>
-		</string>
-		<integer type="unsigned" size="64">
-			<name>modtime</name>
-			<longname>Last Modification Time</longname>
-			<description>The time at which this object description was last modified.</description>
-		</integer>
-		<list>
-			<name>propertygroups</name>
-			<longname>Property Groups</longname>
-			<structure>
-				<integer type="unsigned" size="32">
-					<name>propertygroupid</name>
-					<longname>Property Group ID</longname>
-					<description>The ID for this Property Group.</description>
-				</integer>
-				<string>
-					<name>groupname</name>
-					<longname>Property Group Name</longname>
-					<description>Name of this Property Group.</description>
-				</string>
-				<string>
-					<name>groupdescription</name>
-					<longname>Property Group Description</longname>
-					<description>Description of this Property Group.</description>
-				</string>
-				<list>
-					<name>parameters</name>
-					<longname>Object Parameters</longname>
-					<structure>
-						<string>
-							<name>name</name>
-							<longname>argument name</longname>
-							<description/>
-						</string>
-						<integer type="unsigned" size="32">
-							<name>type</name>
-							<longname>argument type ID</longname>
-							<description>argument type ID</description>
-							<subtype/>
-						</integer>
-						<string>
-							<name>description</name>
-							<longname>Description</longname>
-							<description>Description of this parameter.</description>
-						</string>
-						<descparameter ref="ObjectParams" typefield="type">
-							<name>extradata</name>
-							<longname>extra data for this parameter</longname>
-						</descparameter>
-					</structure>
-				</list>
-			</structure>
-		</list>
-	</structure>
-</packet>
-
-
-<packet id="69" base="GetIDSequence" name="GetObjectDescIDs">
-	<longname>Get Object Description IDs</longname>
-</packet>
-
-
-<packet id="70" base="IDSequence" name="ObjectDescIDs">
-	<longname>List of Object Description IDs</longname>
-</packet>
-
-
 <packet base="GetWithID" name="GetObjectsByID" id="5">
 	<longname>Get Objects by ID</longname>
 </packet>
-
-
 
 <packet base="Request" name="GetObjectsByPos" id="6">
 	<longname>Get Objects by Position</longname>
@@ -1406,70 +763,104 @@
 <packet base="Response" name="Object" id="7">
 	<longname>Object</longname>
 	<structure>
-		<integer type="unsigned" size="32" readonly="yes">
+		<integer type="unsigned" size="32">
 			<name>id</name>
 			<longname>Object ID</longname>
 			<description>The unquie identifier of the object.</description>
 		</integer>
-		<integer type="unsigned" size="32" readonly="yes">
+		<integer type="unsigned" size="32">
 			<name>otype</name>
 			<longname>Object Type</longname>
 			<description>The type of the object.</description>
-			<subtype/>
+			<subtype />
 		</integer>
 		<string>
 			<name>name</name>
 			<longname>Object Name</longname>
 			<description>The name of the object.</description>
 		</string>
-		<string>
-			<name>desc</name>
-			<longname>Object Description</longname>
-			<description>A description of the object.</description>
-		</string>
-		<integer type="unsigned" size="32" readonly="yes">
-			<name>parent</name>
-			<longname>Parent Object ID</longname>
-			<description>The ID of the object that contains this object.</description>
+		<integer type="unsigned" size="64">
+			<name>size</name>
+			<longname>Object Size</longname>
+			<description>The size of the object (diameter).</description>
 		</integer>
+		<group>
+			<name>pos</name>
+			<longname>Position</longname>
+			<structure>
+				<integer type="signed" size="64">
+					<name>x</name>
+				</integer>
+				<integer type="signed" size="64">
+					<name>y</name>
+				</integer>
+				<integer type="signed" size="64">
+					<name>z</name>
+				</integer>
+			</structure>
+		</group>
+		<group>
+			<name>vel</name>
+			<longname>Velocity</longname>
+			<structure>
+				<integer type="signed" size="64">
+					<name>x</name>
+				</integer>
+				<integer type="signed" size="64">
+					<name>y</name>
+				</integer>
+				<integer type="signed" size="64">
+					<name>z</name>
+				</integer>
+			</structure>
+		</group>
 		<list>
 			<name>contains</name>
 			<longname>Contains</longname>
 			<description>IDs of the objects contained by this object.</description>
 			<structure>
-				<integer type="unsigned" size="32" readonly="yes">
+				<integer type="unsigned" size="32">
 					<name>id</name>
 					<longname>the ID</longname>
 					<description>the ID</description>
 				</integer>
 			</structure>
 		</list>
-		<integer type="unsigned" size="64" readonly="yes">
+		<list>
+			<name>ordertypes</name>
+			<longname>Order Types</longname>
+			<description>The order types that a player can send to this object.</description>
+			<structure>
+				<integer type="unsigned" size="32">
+					<name>id</name>
+					<longname>the ID</longname>
+					<description>the ID</description>
+				</integer>
+			</structure>
+		</list>
+		<integer type="unsigned" size="32">
+			<name>orders</name>
+			<longname>number of orders currently on this object</longname>
+			<description>number of orders currently on this object</description>
+		</integer>
+		<integer type="unsigned" size="64">
 			<name>modtime</name>
 			<longname>Last Modification Time</longname>
 			<description>The time at which this object was last modified.</description>
 		</integer>
-		<character size="16">
+		<character size="8">
 			<name>padding</name>
 		</character>
 		<useparameters ref="ObjectParams">
-			<name>parameters</name>
-			<longname>the object's parameters</longname>
+			<name>object</name>
+			<longname>the objet's data</longname>
 			<typefield>otype</typefield>
-			<typeframe name="ObjectDesc" idfield="id">
-				<getlist name="propertygroups">
-					<getlist name="parameters">
-						<getfield name="type"/>
-					</getlist>
-				</getlist>
-			</typeframe>
 		</useparameters>
 	</structure>
-</packet>
-
-<packet base="Object" name="ModifyObject" id="71">
-	<longname>Modify Object</longname>
-	<direction>server</direction>
+	<note>
+		Note: The number of orders should be the number of orders the person can see on the
+		object. Not the total number of orders on the object. 
+	</note>
 </packet>
 
 
@@ -1546,17 +937,17 @@
 			<name>id</name>
 			<longname>order type</longname>
 			<description>order type</description>
-			<subtype/>
+			<subtype />
 		</integer>
 		<string>
 			<name>name</name>
-			<longname/>
-			<description/>
+			<longname></longname>
+			<description></description>
 		</string>
 		<string>
 			<name>description</name>
-			<longname/>
-			<description/>
+			<longname></longname>
+			<description></description>
 		</string>
 		<list>
 			<name>parameters</name>
@@ -1565,18 +956,18 @@
 					<string>
 						<name>name</name>
 						<longname>argument name</longname>
-						<description/>
+						<description></description>
 					</string>
 					<integer type="unsigned" size="32">
 						<name>type</name>
 						<longname>argument type ID</longname>
 						<description>argument type ID</description>
-						<subtype/>
+						<subtype />
 					</integer>
 					<string>
 						<name>description</name>
-						<longname/>
-						<description/>
+						<longname></longname>
+						<description></description>
 					</string>
 			</structure>
 		</list>
@@ -1632,8 +1023,7 @@
 		<integer type="unsigned" size="32">
 			<name>otype</name>
 			<longname>Order Type ID</longname>
-			<description>Order Type ID</description>
-			<subtype/>
+			<subtype />
 		</integer>
 		<integer type="unsigned" size="32" readonly="yes">
 			<name>turns</name>
@@ -1659,8 +1049,8 @@
 			</structure>
 		</list>
 		<useparameters ref="OrderParams">
-			<name>parameters</name>
-			<longname>this order's parameters</longname>
+			<name>orderparams</name>
+			<longname>the order's parameter</longname>
 			<description>extra data, required by the order is appended to the end</description>
 			<typefield>otype</typefield>
 			<typeframe name="OrderDesc" idfield="id">
@@ -1681,14 +1071,10 @@
 	</note>
 </packet>
 
-<packet id="12" base="Order" name="OrderInsert">
-	<direction>server</direction>
-        <note>Now returns the order frame, not Okay frame.</note>
-</packet>
+<packet id="12" base="Order" name="OrderInsert"></packet>
 
 <packet id="34" base="Order" name="OrderProbe">
 	<longname>Probe Order</longname>
-	<direction>server</direction>
 	<note>
 	A Probe Order frame gets an order as if the order given was put in the object's order queue. 
 	These probes should occur as if no orders currently exist on object and should 
@@ -1722,40 +1108,10 @@
 			<longname>Time to Next Turn</longname>
 			<description>The time in seconds before the next end of turn starts</description>
 		</integer>
-		<enumeration type="unsigned" size="32" style="single">
-			<name>reason</name>
-			<longname>The reason</longname>
-			<description>Explains why this frame was sent.</description>
-			<values>
-				<value id="0x0" name="Requested">This frame was requested.</value>
-				<value id="0x1" name="TimerStarted">Turn timer has been started</value>
-				<value id="0x2" name="TimerWarning">Advanced warning of the turn timer expiring.</value>
-				<value id="0x3" name="AllFinished">All players have finished and the turn has ended.</value>
-				<value id="0x4" name="ThresholdFinishedTimerStarted">Threshold of players have finished, the timer for the remaining players has started.</value>
-				<value id="0x5" name="EndOfTurnStarted">End of turn started.</value>
-			</values>
-		</enumeration>
-		<integer type="unsigned" size="32">
-			<name>turn</name>
-			<longname>Current Turn</longname>
-			<description>The current turn.</description>
-		</integer>
-		<string>
-			<name>turnname</name>
-			<longname>Turn Name</longname>
-			<description>The name of the current turn.  May be
-			empty.</description>
-		</string>
 	</structure>
 	<note>
 		If the value is 0 then the end of turn has just started.
 	</note>
-</packet>
-
-
-<packet base="Request" name="FinishedTurn" id="63">
-	<longname>Finished Turn</longname>
-	<description>The player sends this frame to the server when the player has finished everything and is ready for the end of turn.</description>
 </packet>
 
 
@@ -1845,8 +1201,8 @@
 		</string>
 		<string type="formatted">
 			<name>body</name>
-			<longname>a Formatted String</longname>
-			<description>Body of the message</description>
+			<longname>Body of the message</longname>
+			<description>a Formatted String</description>
 		</string>
 		<integer type="unsigned" size="32">
 			<name>turn</name>
@@ -1949,7 +1305,6 @@
 
 <packet id="20" base="Message" name="PostMessage">
 	<longname>Post Message</longname>
-	<direction>server</direction>
 </packet>
 
 <packet id="21" base="GetMessage" name="RemoveMessage">
@@ -1973,7 +1328,6 @@
 		<integer type="unsigned" size="32">
 			<name>id</name>
 			<longname>Resource ID</longname>
-			<description>Resource ID</description>
 		</integer>
 		<string type="formatted">
 			<name>singularname</name>
@@ -1984,11 +1338,11 @@
 			<longname>plural name of the resource</longname>
 		</string>
 		<string type="formatted">
-			<name>singularunit</name>
+			<name>singularunitname</name>
 			<longname>singular name of the resources unit</longname>
 		</string>
 		<string type="formatted">
-			<name>pluralunit</name>
+			<name>pluralunitname</name>
 			<longname>plural name of the resources unit</longname>
 		</string>
 		<string type="formatted">
@@ -1997,13 +1351,11 @@
 		</string>
 		<integer type="unsigned" size="32">
 			<name>weight</name>
-			<longname>weight per unit of resource</longname>
-			<description>0 for not applicable</description>
+			<longname>weight per unit of resource (0 for not applicable)</longname>
 		</integer>
 		<integer type="unsigned" size="32">
 			<name>size</name>
-			<longname>size per unit of resource</longname>
-			<description>0 for not applicable</description>
+			<longname>size per unit of resource (0 for not applicable)</longname>
 		</integer>
 		<integer type="unsigned" size="64">
 			<name>modtime</name>
@@ -2031,13 +1383,10 @@
 
 <packet id="40" base="Response" name="Player">
 	<longname>Player Data</longname>
-
-
 	<structure>
 		<integer type="unsigned" size="32">
 			<name>id</name>
 			<longname>the Player id</longname>
-			<description>the Player id</description>
 		</integer>
 		<string>
 			<name>name</name>
@@ -2056,14 +1405,6 @@
 	</note>
 </packet>
 
-<packet id="72" base="GetIDSequence" name="GetPlayerIDs">
-	<longname>Get Player IDs</longname>
-</packet>
-
-
-<packet id="73" base="IDSequence" name="PlayerIDs">
-	<longname>List Of Player IDs</longname>
-</packet>
 
 <packet id="41" base="GetWithID" name="GetCategory">
 	<longname>Get Category Frame</longname>
@@ -2074,12 +1415,11 @@
 </packet>
 
 <packet id="42" base="Response" name="Category">
-	<longname>Category Frame</longname>
+	<longname>Category Frame, Add Category</longname>
 	<structure>
 		<integer type="semisigned" size="32">
 			<name>id</name>
 			<longname>Category ID</longname>
-			<description>Category ID</description>
 		</integer>
 		<integer type="unsigned" size="64">
 			<name>modtime</name>
@@ -2105,7 +1445,6 @@
 
 <packet id="43" base="Category" name="AddCategory">
 	<longname>Add Category</longname>
-	<direction>server</direction>
 </packet>
 
 <packet id="45" base="GetIDSequence" name="GetCategoryIDs">
@@ -2127,14 +1466,11 @@
 </packet>
 
 <packet id="48" base="Response" name="Design">
-	<longname>Design Frame</longname>
-
-
+	<longname>Design Frame, Add Design Frame, Modify Design</longname>
 	<structure>
 		<integer type="unsigned" size="32">
 			<name>id</name>
 			<longname>Design ID</longname>
-			<description>Design ID</description>
 		</integer>
 		<integer type="unsigned" size="64">
 			<name>modtime</name>
@@ -2142,12 +1478,12 @@
 			<description>The time at which this design was last modified.</description>
 		</integer>
 		<list>
-			<name>catlist</name>
-			<longname>Category List</longname>
+			<name>categories</name>
+			<longname>categories this design is in</longname>
 			<structure>
 				<integer type="unsigned" size="32">
-					<name>catid</name>
-					<longname>Category ID</longname>
+					<name>category</name>
+					<longname>one category</longname>
 				</integer>
 			</structure>
 		</list>
@@ -2160,13 +1496,12 @@
 			<longname>description of the design</longname>
 		</string>
 		<integer type="semisigned" size="32">
-			<name>inuse</name>
+			<name>usage</name>
 			<longname>number of times the design is in use</longname>
 		</integer>
 		<integer type="semisigned" size="32">
 			<name>owner</name>
-			<longname>Owner Player Id</longname>
-			<description>owner of the design</description>
+			<longname>owner of the design</longname>
 		</integer>
 		<list>
 			<name>components</name>
@@ -2175,12 +1510,10 @@
 				<integer type="unsigned" size="32">
 					<name>componentid</name>
 					<longname>component id</longname>
-					<description>component id</description>
 				</integer>
 				<integer type="unsigned" size="32">
-					<name>compquant</name>
+					<name>componentnum</name>
 					<longname>the number of components</longname>
-					<description>the number of components</description>
 				</integer>
 			</structure>
 		</list>
@@ -2193,13 +1526,13 @@
 			<longname>List of Properties</longname>
 			<structure>
 				<integer type="unsigned" size="32">
-					<name>propertyid</name>
+					<name>id</name>
 					<longname>property id</longname>
 					<description>property id</description>
 				</integer>
 				<string type="formatted">
-					<name>displaystring</name>
-					<longname>String value of the property</longname>
+					<name>value</name>
+					<longname>property display string</longname>
 				</string>
 			</structure>
 		</list>
@@ -2226,12 +1559,10 @@
 
 <packet id="49" base="Design" name="AddDesign">
 	<longname>Add Design</longname>
-	<direction>server</direction>
 </packet>
 
 <packet id="50" base="Design" name="ModifyDesign">
 	<longname>Modify Design</longname>
-	<direction>server</direction>
 </packet>
 
 <packet id="52" base="GetIDSequence" name="GetDesignIDs">
@@ -2254,7 +1585,6 @@
 		<integer type="unsigned" size="32">
 			<name>id</name>
 			<longname>component ID</longname>
-			<description>component ID</description>
 		</integer>
 		<integer type="unsigned" size="64">
 			<name>modtime</name>
@@ -2262,12 +1592,12 @@
 			<description>The time at which this component was last modified.</description>
 		</integer>
 		<list>
-			<name>catlist</name>
-			<longname>Category List</longname>
+			<name>categories</name>
+			<longname>categories this component is in</longname>
 			<structure>
 				<integer type="unsigned" size="32">
-					<name>catid</name>
-					<longname>category this component is in</longname>
+					<name>category</name>
+					<longname>one category</longname>
 				</integer>
 			</structure>
 		</list>
@@ -2289,9 +1619,8 @@
 			<longname>List of Properties</longname>
 			<structure>
 				<integer type="unsigned" size="32">
-					<name>propertyid</name>
+					<name>id</name>
 					<longname>Property ID</longname>
-					<description>Property ID</description>
 				</integer>
 				<string>
 					<name>valuefunc</name>
@@ -2333,19 +1662,18 @@
 			<description>The time at which this property was last modified.</description>
 		</integer>
 		<list>
-			<name>catlist</name>
-			<longname>Category List</longname>
+			<name>categories</name>
+			<longname>categories this component is in</longname>
 			<structure>
 				<integer type="unsigned" size="32">
-					<name>catid</name>
-					<longname>category this component is in</longname>
+					<name>category</name>
+					<longname>one category</longname>
 				</integer>
 			</structure>
 		</list>
 		<integer type="unsigned" size="32">
 			<name>rank</name>
 			<longname>rank of the property</longname>
-			<description>rank of the property</description>
 		</integer>
 		<string>
 			<name>name</name>
@@ -2353,7 +1681,7 @@
 			<description>A valid TPCL identifier for this property.</description>
 		</string>
 		<string type="formatted">
-			<name>dispalyname</name>
+			<name>displayname</name>
 			<longname>display name of the property</longname>
 		</string>
 		<string type="formatted">
@@ -2380,6 +1708,12 @@
 
 <packet id="61" base="IDSequence" name="PropertyIDs">
 	<longname>List of Property IDs</longname>
+</packet>
+
+<!--  TP03+: a frame implanted from TP04, which tpserver-cpp will accept in TP03 mode too -->
+<packet base="Request" name="FinishedTurn" id="63">
+	<longname>Finished Turn</longname>
+	<description>The player sends this frame to the server when the player has finished everything and is ready for the end of turn.</description>
 </packet>
 
 </protocol>
