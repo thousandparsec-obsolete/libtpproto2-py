@@ -1,17 +1,19 @@
 from types import TupleType, ListType
 
+import tp.netlib.xstruct
 from Structure import Structure
 
 class GroupStructure(Structure):
 	class GroupProxy(object):
 		def __init__(self, group, obj, objcls):
 			self.group  = group
+			self.structures = group.structures
 			self.obj    = obj
 			self.objcls = objcls
 
 		def __eq__(self, other):
 			l = []
-			for i, structure in enumerate(self.group.structures):
+			for i, structure in enumerate(self.structures):
 				l.append(self[i])
 			return l == other
 		
@@ -19,32 +21,32 @@ class GroupStructure(Structure):
 			return not self.__eq__(other)
 
 		def __getitem__(self, position):
-			return self.group.structures[position].__get__(self.obj, self.objcls)
+			return self.structures[position].__get__(self.obj, self.objcls)
 
 		def __setitem__(self, position, value):
-			return self.group.structures[position].__set__(self.obj, value)
+			return self.structures[position].__set__(self.obj, value)
 	
 		def __delitem__(self, position):
-			return self.group.structures[position].__delete__(self.obj)
+			return self.structures[position].__delete__(self.obj)
 
 		def __getattr__(self, name):
-			for i, structure in enumerate(self.group.structures):
+			for i, structure in enumerate(self.structures):
 				if structure.name == "%s_%s" % (self.group.name, name):
 					return self[i]
 			raise AttributeError("No such attribute %s" % name)
 
 		def __setattr__(self, name, value):
-			if name in ("group", "obj", "objcls"):
+			if name in ("group", "obj", "objcls", "structures"):
 				object.__setattr__(self, name, value)
 			else:
-				for i, structure in enumerate(self.group.structures):
+				for i, structure in enumerate(self.structures):
 					if structure.name == "%s_%s" % (self.group.name, name):
 						self[i] = value
 						return
 				raise AttributeError("No such attribute %s" % name)
 		
 		def __delattr__(self, name):
-			for i, structure in enumerate(self.group.structures):
+			for i, structure in enumerate(self.structures):
 				if structure.name == "%s_%s" % (self.group.name, name):
 					del self[i]
 					return
@@ -91,6 +93,14 @@ class GroupStructure(Structure):
 		return xstruct
 	xstruct = property(xstruct)
 	
+	def pack(self, obj):
+		return ''.join([structure.pack(obj) for structure in self.structures])
+	
+	def unpack(self, obj, string):
+		for structure in self.structures:
+			string = structure.unpack(obj, string)
+		return string
+	
 	def getname(self):
 		return self._name
 	def setname(self, name):
@@ -106,6 +116,9 @@ class GroupStructure(Structure):
 			structure.__set__(obj, value.pop(0))
 
 	def __get__(self, obj, objcls):
+		if obj is None:
+			return self
+		
 		return self.GroupProxy(self, obj, objcls)
 
 	def __delete__(self, obj):

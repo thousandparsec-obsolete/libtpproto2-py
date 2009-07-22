@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<!DOCTYPE protocol SYSTEM "protocol.dtd">
+<protocol version="TP03">
+	<packet name="Fail" id="1">
+		<description>A request has failed in some sort of way.</description>
+		<structure>
+			<enumeration type="unsigned" size="32" style="single">
+				<name>code</name>
+				<longname>Error Code</longname>
+				<description>Text message of the error.</description>
+				<values>
+					<value id="0" name="Protocol">Protocol Error, Something went wrong with the protocol</value>
+					<value id="1" name="Frame">Frame Error, One of the frames sent was bad or corrupted</value>
+					<value id="2" name="UnavailablePermanently">Unavailable Permanently, This operation is unavailable</value>
+					<value id="3" name="UnavailableTemporarily">Unavailable Temporarily, This operation is unavailable at this moment</value>
+					<value id="4" name="NoSuchThing">No Such Thing, The object/order/message does not exist</value>
+					<value id="5" name="PermissionDenied">Permission Denied, You don't have permission to do this operation</value>
+					<value id="6" name="Gone">Object/order/message has gone.</value>
+					<value id="7" name="FrameVersionNotSupported">The frame version is not supported</value>
+					<value id="8" name="RequestTooBig">The requested reply is too big</value>
+					<illegal-tag />
+				</values>
+			</enumeration>
+		</structure>
+	</packet>
+</protocol>

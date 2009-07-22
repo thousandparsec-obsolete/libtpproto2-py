@@ -6,6 +6,8 @@ their own type and provide protocol information for how to share them.
 This class is just an "abstract" class providing a few common functions and defining the interface.
 """
 
+import tp.netlib.xstruct
+
 class Structure(object):
 	def __init__(self, name=None, longname="", description="", example="", **kw):
 		if name is None:
@@ -45,6 +47,14 @@ class Structure(object):
 		"""
 		raise NotImplementedError("Not Implimented")
 	xstruct = property(xstruct)
+	
+	def pack(self, obj):
+		return tp.netlib.xstruct.pack(self.xstruct, self.__get__(obj, obj.__class__))
+	
+	def unpack(self, obj, string):
+		data, string = tp.netlib.xstruct.unpack(self.xstruct, string)
+		self.__set__(obj, data[0])
+		return string
 
 	def __str__(self):
 		return "<%s %s %s>" % (self.__class__.__name__.split('.')[-1], hex(id(self)), self.name)
@@ -55,6 +65,9 @@ class Structure(object):
 		setattr(obj, "__"+self.name, value)
 
 	def __get__(self, obj, objcls):
+		if obj is None:
+			return self
+		
 		try:
 			return getattr(obj, "__"+self.name)
 		except AttributeError, e:

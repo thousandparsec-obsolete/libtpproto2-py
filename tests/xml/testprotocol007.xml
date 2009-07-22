@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!DOCTYPE protocol SYSTEM "protocol.dtd">
+<protocol version="TP03">
+	<packet name="Test">
+		<direction>any</direction>
+		<structure>
+			<character size="4">
+				<name>version</name>
+				<longname>Packet Version</longname>
+				<description><b>Always has value "TP03" ("TP" plus version number), no null terminator.</b></description>
+				<example>TP03</example>
+			</character>
+		</structure>
+	</packet>
+</protocol>

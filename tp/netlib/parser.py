@@ -1,172 +1,306 @@
-
-import pprint
 from types import *
-import xml.parsers.expat
+import xml.dom.minidom
+from xml.parsers.expat import ExpatError
 
 # Squash warnings about hex/oct
 import warnings
 
 # Local Imports
-import Structures
-import objects
+import structures
+import objects_auto
 
 convert = {
 	'id':	int,
 }
 
-class Parser(object):
+class Objects(object):
+	"""This class acts as a container for the protocol datatypes."""
 	def __init__(self):
-		self.mode = []
-		self.attrs = []
+		#copy the pre-written base objects
+		for name in dir(objects_auto):
+			if not name.startswith('_'):
+				setattr(self, name, getattr(objects_auto, name))
+
+objects = Objects()
+
+class Parameter(object):
+	usestruct = []
+	descstruct = []
+	name = ""
+	type = -1
+
+class DescStructure(structures.GroupStructure):
+	def __init__(self, *args, **kw):
+		if kw.has_key('typefield'):
+			self.typefield = kw['typefield']
+		if kw.has_key('ref'):
+			self.ref = kw['parametersets'][kw['ref']]
+		kw['structures'] = []
+		
+		structures.GroupStructure.__init__(self, *args, **kw)
+	
+	def check(self, value):
+		return True
+	
+	def __set__(self, obj, value):
+		self.structures = self.ref[getattr(obj.group, self.typefield)].descstruct
+		try:
+			structures.GroupStructure.check(self, value)
+			structures.GroupStructure.__set__(self, obj, value)
+		except:
+			self.structures = []
+			raise
 		self.structures = []
 
-	def StartElementHandler(self, name, attrs):
-		#print "Start", name, attrs
-		self.mode.append(name)
-		self.attrs.append(attrs)
+	def __get__(self, obj, objcls):
+		self.structures = self.ref[getattr(obj.group, self.typefield)].descstruct
+		try:
+			value = structures.GroupStructure.__get__(self. obj. objcls)
+		except:
+			self.structures = []
+			raise
+		self.structures = []
+		return value
+
+	def __delete__(self, obj):
+		self.structures = self.ref[getattr(obj.group, self.typefield)].descstruct
+		try:
+			structures.GroupStructure.__delete__(self. obj)
+		except:
+			self.structures = []
+			raise
+		self.structures = []
+
+
+def getText(nodes):
+	"""Pull the text out of <tag>text</tag>"""
+	for node in nodes:
+		if node.nodeType == node.TEXT_NODE:
+			return node.data
+		elif node.nodeType != node.COMMENT_NODE:
+			raise ValueError("Unexepcted node %s while searching for text." % node.nodeName)
+	return ""
+
+class Parser(object):
+	def parseFile(self, file):
+		"""Opens the file and return the protocol described by it."""
+		self.objects = Objects()
+		self.parametersets = {}
+		try:
+			document = xml.dom.minidom.parse(file)
+		except ExpatError, e:
+			raise ValueError("Error parsing %s: %s" % (file, e))
+		root = document.documentElement
+		if root.nodeName != "protocol":
+			raise ValueError("Outermost tag of %s is %s, not protocol" % (file, root.nodeName))
+		if str(root.attributes['version'].value) == 'TP03':
+			self.objects.Header = objects_auto._makeHeader('TP03')
+		elif str(root.attributes['version'].value) == 'TP04':
+			self.objects.Header = objects_auto._makeHeader('TP\x04\x00')
+		for child in root.childNodes:
+			if child.nodeName == 'packet':
+				self.buildPacket(child)
+			elif child.nodeName == 'parameterset':
+				name = str(child.attributes['name'].value)
+				self.parametersets[name] = self.buildParameterSet(child)
+			elif child.nodeType not in [child.TEXT_NODE, child.COMMENT_NODE]: #text nodes are okay
+				raise ValueError("Unrecognized tag in protocol: %s" % child.nodeName)
+		return self.objects
+
+	def buildPacket(self, packet):
+		structures = []
 		
-		if name in ("packet",):
-			# Figure out what this packet is based on
-			if attrs.has_key("base"):
-				base = eval("objects." + attrs['base'])
-			else:
-				base = objects.Packet
-
-			class NewPacket(base):
-				pass
-			self.packet = NewPacket
-
-		if name in ("structure",):
-			self.structures.append([])
-
-	def EndElementHandler(self, name):
-		#print "End", name
-		if name != self.mode[-1]:
-			raise ValueError("Element matching error")
-		name = self.mode.pop(-1)
-		attrs = self.attrs.pop(-1)
-
-		# Useless for us properties
-		if name in ("notes", "note", "example"):
+		try:
+			name = packet.attributes['name'].value
+		except KeyError:
+			raise ValueError("Packet has no name!")
+		
+		base = self.objects.Packet
+		if 'base' in packet.attributes.keys():
+			try:
+				base = getattr(self.objects, packet.attributes['base'].value)
+			except AttributeError:
+				raise ValueError("Packet base %s of %s does not exist" % (packet.attributes['base'].value, name))
+			
+		if hasattr(self.objects, name):
+			print "Skipping %s because it's pre-written." % name
 			return
-
-		#print name, self.mode
-		#print attrs, self.attrs
-		#print "----------------------------------"
-		# Packet Attributes
-		if name in ("direction",):
-			if self.mode[-1] != "packet":
-				raise ValueError("Got a %s when not in a packet!" % name)
-				
-			self.attrs[-1][name] = self.data
-			del self.data
 		
-		# Finished a packet
-		if name in ("packet",):
-			for key, value in attrs.items():
-				if key in convert:
-					value = convert[key](value)
-				setattr(self.packet, key, value)
-
-			print self.packet.name
+		class NewPacket(base):
+			pass
 		
-			if not hasattr(objects, self.packet.name):
-				setattr(objects, self.packet.name, self.packet)
+		for attribute in packet.attributes.keys():
+			value = packet.attributes[attribute].value
+			if attribute in convert:
+				value = convert[attribute](value)
+			setattr(NewPacket, '_' + attribute, value)
+		
+		for child in packet.childNodes:
+			if child.nodeName == 'structure':
+				structures = self.buildStructureList(child, name)
+			elif child.nodeName in ['direction', 'failtype', 'description', 'note', 'longname']:
+				pass
+			elif child.nodeType not in [child.TEXT_NODE, child.COMMENT_NODE]:
+				raise ValueError("Unrecognized tag in packets: %s" % child.nodeName)
+		
+		for structure in structures:
+			setattr(NewPacket, structure.name, structure)
+		setattr(NewPacket, 'structures', structures)
+		
+		setattr(self.objects, name, NewPacket)
+
+	def buildStructureList(self, structure, packetName = None):
+		"""Parse a structure node and construct a list of all the structures inside"""
+		types = ("string", "character", "integer", "list", "group", "enumeration", "datetime", "descparameter")
+		list = []
+		for child in structure.childNodes:
+			#if it's a recognized structure
+			if child.nodeName in types:
+				list.append(self.buildStructure(child))
+			elif child.nodeName == 'useparameters':
+				if packetName == None:
+					raise ValueError("useparameters tag not in toplevel structure of a packet!")
+				else:
+					self.buildUseParameters(child, packetName)
+			elif child.nodeType not in [child.TEXT_NODE, child.COMMENT_NODE]:
+				raise ValueError("Unrecognized tag in structure: %s" % child.nodeName)
+		return list
+
+	def buildStructure(self, structure):
+		"""Translate a node into a structure."""
+		type = structure.nodeName.title()
+		attributes = {}
+		for child in structure.childNodes:
+			if child.nodeName in ['name', 'longname', 'description', 'note', 'example']:
+				key = str(child.nodeName)
+				value = getText(child.childNodes)
+				attributes[key] = value
+			elif child.nodeName == 'values':
+				attributes['values'] = self.buildValues(child)
+			elif child.nodeName == 'structure':
+				attributes['structures'] = self.buildStructureList(child)
+			elif child.nodeName == 'subtype':
+				pass #not sure if we need to do anything with this
+			elif child.nodeType not in [child.TEXT_NODE, child.COMMENT_NODE]:
+				raise ValueError("Unrecognized tag in %s: %s" % (type, child.nodeName))
+		for attribute in structure.attributes.keys():
+			key = str(attribute)
+			if key == 'size':
+				value = int(structure.attributes[attribute].value)
 			else:
-				# Better check the prebuilt one is identical
-				print "Ignoring packet of type %s because it is hand coded."
-			del self.packet
-			print
-
-		# Finished a structure
-		if name in ("structure",):
-			if self.mode[-1] == "packet":
-				structures = self.structures.pop(-1)
-				self.packet.structures = structures
-
-				for structure in structures:
-					# FIXME: This doesn't seem the correct place to put this....
-					def StructurePropertySet(self, value, name=structure.name):
-						structure.check(value)
-						setattr(self, "__%s" % name, value)
-	
-					def StructurePropertyGet(self, name=structure.name):
-						return getattr(self, "__%s" % name)
-	
-					setattr(self.packet, name, property(StructurePropertyGet, StructurePropertySet, structure.description))
-					return
-			
-			if self.mode[-1] == "list":
-				self.attrs[-1]['structures'] = self.structures.pop(-1)
-				return
+				value = str(structure.attributes[attribute].value)
+			attributes[key] = value
 		
-		# Structure components
-		types = ("string", "character", "integer", "list", "group", "enumeration", "datetime",)
-		if name in types:
-			if self.mode[-1] != "structure":
-				raise ValueError("Got a %s when not in a structure!" % name)
-			
-			nattrs = {}
-			for key, value in attrs.items():
-				if key in ("size",):
-					value = long(value)
-				nattrs[str(key)] = value
+		if type == 'Descparameter':
+			attributes['parametersets'] = self.parametersets
+			return DescStructure(**attributes)
+		else:
+			return getattr(structures, type + "Structure")(**attributes)
 
-			# Check that atleast the basic arugments exist
-			packetname = self.attrs[self.__packetLevel()]['name']
-			if not nattrs.has_key('name'):
-				raise SyntaxError("%s on %s does not have a name" % (name.title(), packetname))
-			if not nattrs.has_key('longname'):
-				warnings.warn("%s on %s does not have a longname" % (nattrs['name'], packetname), SyntaxWarning)
-			if not nattrs.has_key('description'):
-				warnings.warn("%s on %s does not have a description" % (nattrs['name'], packetname), SyntaxWarning)
+	def buildValues(self, node):
+		"""Builds the value list that is used in enumeration structures."""
+		values = {}
+		for child in node.childNodes:
+			if child.nodeName == 'value':
+				name = str(child.attributes['name'].value)
+				if child.attributes['id'].value.startswith('0x'):
+					id = int(child.attributes['id'].value, 16)
+				else:
+					id = int(child.attributes['id'].value)
+				values[name] = id
+			elif child.nodeType not in [child.TEXT_NODE, child.COMMENT_NODE]:
+				raise ValueError("Unrecognized tag in values: %s" % child.nodeName)
+		return values
 
-			print "Structures.%sStructure" % name.title(), nattrs
-			self.structures[-1].append(eval("Structures.%sStructure" % name.title())(**nattrs))
-		
-		# Properties of a packet or structure
-		if name in ("name", "longname", "description", "example",):
-			if self.mode[-1] == "packet":
-				if name == "description":
-					name = "__doc__"
-				setattr(self.packet, name, self.data)
+	def buildParameterSet(self, node):
+		parameters = {}
+		for child in node.childNodes:
+			if child.nodeName == 'parameter':
+				type = int(child.attributes['type'].value)
+				parameters[type] = self.buildParameter(child)
+			elif child.nodeName in ['longname', 'description']:
+				pass #don't really use these, but they're valid.
+			elif child.nodeType not in [child.TEXT_NODE, child.COMMENT_NODE]:
+				raise ValueError("Unrecognized tag in parameterset: %s" % child.nodeName)
+		return parameters
 
-			if self.mode[-2] == "structure":
-				if not self.mode[-1] in types:
-					raise ValueError("Got a %s when not in a structure component!" % name)
-				self.attrs[-1][name] = self.data
-			del self.data
+	def buildParameter(self, node):
+		name = str(node.attributes['name'].value)
+		type = int(node.attributes['type'].value)
+		parameter = Parameter()
+		for child in node.childNodes:
+			if child.nodeName in ['usestruct', 'descstruct']:
+				for structNode in child.childNodes:
+					if structNode.nodeName == 'structure':
+						structure = self.buildStructureList(structNode)
+						setattr(parameter, child.nodeName, structure) #set usestruct or descstruct
+					elif structNode.nodeType not in [structNode.TEXT_NODE, structNode.COMMENT_NODE]:
+						raise ValueError("Unrecognized tag in usestruct: %s" % structNode.nodeName)
+			elif child.nodeName in ['longname', 'description', 'note']:
+				pass #don't really use these, but they're valid.
+			elif child.nodeType not in [child.TEXT_NODE, child.COMMENT_NODE]:
+				raise ValueError("Unrecognized tag in parameter: %s" % child.nodeName)
+		setattr(objects, name, parameter)
+		return parameter
 
-	def __packetLevel(self):
-		n = -1
-		while self.mode[n] != "packet":
-			n -= 1
-		return n
+	def buildUseParameters(self, node, packetName):
+		"""The useparameters field actually defines how a description class will add extra structures to the class.
+		This function adds a build method to the description to return an augmented version of the class in question"""
+		try:
+			ref = node.attributes['ref'].value
+		except KeyError:
+			raise ValueError("Useparameters has no ref!")
+		parameters = self.parametersets[ref]
+		attributes = {}
+		for child in node.childNodes:
+			if child.nodeName in ['name', 'longname', 'description', 'typefield']:
+				key = str(child.nodeName)
+				value = getText(child.childNodes)
+				attributes[key] = value
+			elif child.nodeName == 'typeframe':
+				try:
+					name = child.attributes['name'].value
+				except KeyError:
+					raise ValueError("Typeframe has no name!")
+				objects = self.objects #so this can be accessed in the build method
+				getter = self.buildGetter(child)
+				def build(self):
+					base = getattr(objects, packetName)
+					class ExtendedPacket(base):
+						pass
+					for name, type, description in getter(self):
+						parameter = structures.GroupStructure(name=name, structures=parameters[type].usestruct, description=description)
+						ExtendedPacket.structures = [parameter]
+						setattr(ExtendedPacket, name, parameter)
+					return ExtendedPacket
+				setattr(getattr(self.objects, name), 'build', build)
+			elif child.nodeType not in [child.TEXT_NODE, child.COMMENT_NODE]:
+				raise ValueError("Unrecognized tag in useparameters: %s" % child.nodeName)
 
-	def CharacterDataHandler(self, data):
-		self.data = data
+	def buildGetter(self, parent):
+		for child in parent.childNodes:
+			if child.nodeName == 'getlist':
+				try:
+					name = child.attributes['name'].value
+				except KeyError:
+					raise ValueError("getlist has no name!")
+				getter = self.buildGetter(child)
+				def get(obj):
+					result = []
+					for i in getattr(obj, name):
+						result += getter(i)
+					return result
+			elif child.nodeName == 'getfield':
+				try:
+					name = child.attributes['name'].value
+				except KeyError:
+					raise ValueError("getlist has no name!")
+				def get(obj):
+					return [(getattr(obj, 'name'), getattr(obj, 'type'), getattr(obj, 'description'))]
+			elif child.nodeType not in [child.TEXT_NODE, child.COMMENT_NODE]:
+				raise ValueError("Unrecognized tag in %s: %s" % (parent.nodeName, child.nodeName))
+		return get
 
-	def CreateParser(cls):
-		p = xml.parsers.expat.ParserCreate()
-		c = cls()
-
-		#print "dict", type(c), c.__dict__, cls.__dict__
-		for name in cls.__dict__.keys():
-			if name.startswith('_') or name == "CreateParser":
-				continue
-			
-			value = getattr(c, name)
-			if callable(value):
-				setattr(p, name, value)
-
-		return p
-	CreateParser = classmethod(CreateParser)
-
-if __name__ == "__main__":
-	parser = Parser.CreateParser()
-	parser.ParseFile(file("protocol.xml", "r"))
-
-	print objects
-	print dir(objects)
-
-	print objects.Okay(2, "Test")
+def parseFile(file):
+	parser = Parser()
+	return parser.parseFile(file)

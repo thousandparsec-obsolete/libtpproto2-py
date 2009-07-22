@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<!DOCTYPE protocol SYSTEM "protocol.dtd">
+<protocol version="TP03">
+	<parameterset name="OrderParams">
+		<longname>Order Parameters</longname>
+		<description>These are the parameters for Orders and OrderDescriptions.</description>
+		<parameter name="orderParamAbsSpaceCoords" type="0">
+			<longname>Absolute Space Coordinates</longname>
+			<description>Coordinates in absolute space. (Relative to the center of the Universe)</description>
+			<usestruct>
+				<illegal-tag />
+				<structure>
+					<group>
+						<name>pos</name>
+						<longname>Position</longname>
+						<structure>
+							<integer type="signed" size="64">
+								<name>x</name>
+							</integer>
+							<integer type="signed" size="64">
+								<name>y</name>
+							</integer>
+							<integer type="signed" size="64">
+								<name>z</name>
+							</integer>
+						</structure>
+					</group>
+				</structure>
+			</usestruct>
+		</parameter>
+	</parameterset>
+</protocol>

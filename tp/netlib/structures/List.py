@@ -1,5 +1,7 @@
 from types import TupleType, ListType
 
+from tp.netlib.xstruct import pack, unpack
+from Structure import Structure
 from Group import GroupStructure
 
 class ListStructure(GroupStructure):
@@ -81,12 +83,12 @@ class ListStructure(GroupStructure):
 			for value in values:
 				if len(self.list.structures) != 1:
 					self.list.check([value])
-					container = self.list.Container()
+					container = self.list.Container(self.obj)
 					container.group = value
 					containers.append(container)
 				else:
 					self.list.check([value])
-					container = self.list.Container()
+					container = self.list.Container(self.obj)
 					container.group = [value]
 					containers.append(container)
 			getattr(self.obj, "__" + self.list.name).__setslice__(i, j, containers)
@@ -96,7 +98,7 @@ class ListStructure(GroupStructure):
 		
 		
 		def append(self, value):
-			container = self.list.Container()
+			container = self.list.Container(self.obj)
 			self.list.check([value])
 			if len(self.list.structures) != 1:
 				container.group = value
@@ -115,7 +117,7 @@ class ListStructure(GroupStructure):
 			return list(self).index(value)
 		
 		def insert(self, index, value):
-			container = self.list.Container()
+			container = self.list.Container(self.obj)
 			self.list.check([value])
 			if len(self.list.structures) != 1:
 				container.group = value
@@ -136,13 +138,17 @@ class ListStructure(GroupStructure):
 			getattr(self.obj, "__" + self.list.name).reverse()
 		
 		def sort(self):
-			getattr(self.obj, "__" + self.list.name).sort()
+			for index, value in enumerate(sorted(list(self))):
+				self[index] = value
 		
 	def __init__(self, *args, **kw):
 		GroupStructure.__init__(self, *args, **kw)
 		
 		class Container(object):
 			group = GroupStructure("group", structures=self.structures)
+			
+			def __init__(self, parent):
+				self.parent = parent
 		
 		self.Container = Container
 		
@@ -182,20 +188,43 @@ class ListStructure(GroupStructure):
 	xstruct = property(xstruct)
 	name = ''
 	
+	def pack(self, obj):
+		data = getattr(obj, "__" + self.name)
+		size = len(data)
+		string = pack('I', size)
+		for i in data:
+			for structure in self.structures:
+				string += structure.pack(i)
+		return string
+	
+	def unpack(self, obj, string):
+		size, string = unpack('I', string)
+		size = size[0]
+		data = []
+		for i in xrange(size):
+			data.append(self.Container(obj))
+			for structure in self.structures:
+				string = structure.unpack(data[-1], string)
+		
+		return string
+	
 	def __set__(self, obj, values):
 		self.check(values)
 		setattr(obj, "__" + self.name, [])
 		for value in values:
 			if len(self.structures) != 1:
-				container = self.Container()
+				container = self.Container(obj)
 				container.group = value
 				getattr(obj, "__" + self.name).append(container)
 			else:
-				container = self.Container()
+				container = self.Container(obj)
 				container.group = (value,)
 				getattr(obj, "__" + self.name).append(container)
 
 	def __get__(self, obj, objcls):
+		if obj is None:
+			return self
+		
 		return self.ListProxy(self, obj, objcls)
 
 	def __delete__(self, obj):

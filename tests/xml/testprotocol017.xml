@@ -1,0 +1,148 @@
+<?xml version="1.0"?>
+<!DOCTYPE protocol SYSTEM "protocol.dtd">
+<protocol version="TP04">
+<parameterset name="ObjectParams" />
+
+<packet base="Header" name="Response">
+	<direction>client</direction>
+</packet>
+
+<packet id="68" base="Response" name="ObjectDesc">
+	<longname>Object Description</longname>
+	<structure>
+		<integer type="unsigned" size="32">
+			<name>id</name>
+			<longname>object type</longname>
+			<description>object type</description>
+			<subtype/>
+		</integer>
+		<string>
+			<name>name</name>
+			<longname>Name</longname>
+			<description>Name of the object type.</description>
+		</string>
+		<string>
+			<name>description</name>
+			<longname>Description</longname>
+			<description>Description of the object type.</description>
+		</string>
+		<integer type="unsigned" size="64">
+			<name>modtime</name>
+			<longname>Last Modification Time</longname>
+			<description>The time at which this object description was last modified.</description>
+		</integer>
+		<list>
+			<name>propertygroups</name>
+			<longname>Property Groups</longname>
+			<structure>
+				<integer type="unsigned" size="32">
+					<name>propertygroupid</name>
+					<longname>Property Group ID</longname>
+					<description>The ID for this Property Group.</description>
+				</integer>
+				<string>
+					<name>groupname</name>
+					<longname>Property Group Name</longname>
+					<description>Name of this Property Group.</description>
+				</string>
+				<string>
+					<name>groupdescription</name>
+					<longname>Property Group Description</longname>
+					<description>Description of this Property Group.</description>
+				</string>
+				<list>
+					<name>parameters</name>
+					<longname>Object Parameters</longname>
+					<structure>
+						<string>
+							<name>name</name>
+							<longname>argument name</longname>
+							<description/>
+						</string>
+						<integer type="unsigned" size="32">
+							<name>type</name>
+							<longname>argument type ID</longname>
+							<description>argument type ID</description>
+							<subtype/>
+						</integer>
+						<string>
+							<name>description</name>
+							<longname>Description</longname>
+							<description>Description of this parameter.</description>
+						</string>
+						<descparameter ref="ObjectParams" typefield="type">
+							<name>extradata</name>
+							<longname>extra data for this parameter</longname>
+						</descparameter>
+					</structure>
+				</list>
+			</structure>
+		</list>
+	</structure>
+</packet>
+
+<packet base="Response" name="Object" id="7">
+	<longname>Object</longname>
+	<structure>
+		<integer type="unsigned" size="32" readonly="yes">
+			<name>id</name>
+			<longname>Object ID</longname>
+			<description>The unquie identifier of the object.</description>
+		</integer>
+		<integer type="unsigned" size="32" readonly="yes">
+			<name>otype</name>
+			<longname>Object Type</longname>
+			<description>The type of the object.</description>
+			<subtype/>
+		</integer>
+		<string>
+			<name>name</name>
+			<longname>Object Name</longname>
+			<description>The name of the object.</description>
+		</string>
+		<string>
+			<name>desc</name>
+			<longname>Object Description</longname>
+			<description>A description of the object.</description>
+		</string>
+		<integer type="unsigned" size="32" readonly="yes">
+			<name>parent</name>
+			<longname>Parent Object ID</longname>
+			<description>The ID of the object that contains this object.</description>
+		</integer>
+		<list>
+			<name>contains</name>
+			<longname>Contains</longname>
+			<description>IDs of the objects contained by this object.</description>
+			<structure>
+				<integer type="unsigned" size="32" readonly="yes">
+					<name>id</name>
+					<longname>the ID</longname>
+					<description>the ID</description>
+				</integer>
+			</structure>
+		</list>
+		<integer type="unsigned" size="64" readonly="yes">
+			<name>modtime</name>
+			<longname>Last Modification Time</longname>
+			<description>The time at which this object was last modified.</description>
+		</integer>
+		<character size="16">
+			<name>padding</name>
+		</character>
+		<useparameters ref="ObjectParams">
+			<name>parameters</name>
+			<longname>the object's parameters</longname>
+			<typefield>otype</typefield>
+			<typeframe name="ObjectDesc" idfield="id">
+				<getlist name="propertygroups">
+					<getlist name="parameters">
+						<name>parameters</name>
+						<getfield name="type"/>
+					</getlist>
+				</getlist>
+			</typeframe>
+		</useparameters>
+	</structure>
+</packet>
+</protocol>

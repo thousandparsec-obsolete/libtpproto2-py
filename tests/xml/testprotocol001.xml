@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<!DOCTYPE protocol SYSTEM "protocol.dtd">
+<protocol version="TP03">
+	<packet name="Header">
+		<direction>any</direction>
+		<structure>
+			<character size="4">
+				<name>version</name>
+				<longname>Packet Version</longname>
+				<description>Always has value "TP03" ("TP" plus version number), no null terminator.</description>
+				<example>TP03</example>
+			</character>
+			<integer type="unsigned" size="32">
+				<name>sequence</name>
+				<longname>Sequence Number</longname>
+				<description>An incrementing number "sequence number". The sequence number should always be one more then the previous frames sequence number.</description>
+				<example>2345</example>
+			</integer>
+			<integer type="unsigned" size="32">
+				<name>type</name>
+				<longname>Type</longname>
+				<description>Type of packet</description>
+				<subtype />
+				<example>2</example>
+			</integer>
+			<integer type="unsigned" size="32">
+				<name>length</name>
+				<longname>Length</longname>
+				<description>Length of the packet</description>
+				<example>32</example>
+			</integer>
+		</structure>
+	</packet>
+
+	<packet base="Header" name="Request"></packet>
+	<packer base="Header" name="Response"></packer>
+</protocol>

@@ -33,7 +33,7 @@ class IntegerStructure(Structure):
 
 	def check(self, value):
 		if not isinstance(value, (IntType, LongType)):
-			raise ValueError("Value (%s) must be a number" % value)
+			raise ValueError("Value (%r) must be a number" % value)
 
 		# Do a bounds check now
 		if self.type == "signed":
@@ -53,7 +53,7 @@ class IntegerStructure(Structure):
 			raise ValueError("Value is too big! Must be smaller then %i" % max)
 		
 		return True
-			
+		
 	def length(self, value):
 		return self.size / 8
 
