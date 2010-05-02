@@ -2,7 +2,7 @@
 import copy
 
 from Packet import Packet
-import structures
+from tp.netlib import structures
 
 def _makeHeader(version):
 	class Header(Packet):
@@ -32,6 +32,6 @@ def _makeHeader(version):
 				else:
 					value = getattr(self, structure.name)
 				l += structure.length(value)
-			return l
-		length = property(get_length, set_length)
+			return l - (4*8+32+32+32)/8
+		_length = property(get_length, set_length)
 	return Header

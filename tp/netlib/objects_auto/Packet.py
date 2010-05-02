@@ -1,5 +1,5 @@
 
-from xstruct import pack, unpack, hexbyte
+from tp.netlib.xstruct import pack, unpack, hexbyte
 
 class PacketMeta(type):
 	def get_structures(cls):
@@ -66,18 +66,6 @@ class Packet(object):
 			xstruct += structure.xstruct
 		return xstruct
 	xstruct = property(xstruct)
-	
-	def __str__(self):
-		# FIXME: This is wrong!!!
-		if self.sequence == -1:
-			raise SystemError('Packet has a sequence of -1 so can not be sent over the wire!')
-
-		# FIXME: This won't work with a GroupStructure!
-		arguments = []
-		for structure in self.structures:
-			arguments.append(getattr(self, structure.name))
-
-		return pack(self.xstruct, *arguments)
 	
 	def pack(self):
 		return ''.join([structure.pack(self) for structure in self.structures])
