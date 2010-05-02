@@ -62,17 +62,17 @@ class Structure(object):
 
 	def __set__(self, obj, value):
 		self.check(value)
-		setattr(obj, "__"+self.name, value)
+		setattr(obj, "_"+self.name, value)
 
 	def __get__(self, obj, objcls):
 		if obj is None:
 			return self
-		
+	
 		try:
-			return getattr(obj, "__"+self.name)
+			return getattr(obj, "_"+self.name)
 		except AttributeError, e:
 			raise AttributeError("No value defined for %s" % self.name)
 
 	def __delete__(self, obj):
-		delattr(obj, "__"+self.name)
+		delattr(obj, "_"+self.name)
 
