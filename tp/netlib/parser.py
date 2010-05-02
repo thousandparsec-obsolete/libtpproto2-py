@@ -2,6 +2,8 @@ from types import *
 import xml.dom.minidom
 from xml.parsers.expat import ExpatError
 
+import logging
+
 # Squash warnings about hex/oct
 import warnings
 
@@ -123,7 +125,7 @@ class Parser(object):
 				raise ValueError("Packet base %s of %s does not exist" % (packet.attributes['base'].value, name))
 			
 		if hasattr(self.objects, name):
-			print "Skipping %s because it's pre-written." % name
+			logging.debug("Skipping %s because it's pre-written.", name)
 			return
 		
 		class NewPacket(base):
