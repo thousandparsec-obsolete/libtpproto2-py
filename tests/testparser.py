@@ -11,9 +11,10 @@ class TestParser(unittest.TestCase):
 	def test_protocol3(self):
 		objects = parser.parseFile("tp/netlib/protocol3.xml")
 		
-		packet = objects.Okay(0, "")
+		packet = objects.Okay(0, "\x01")
 		self.assertEquals(packet.xstruct, "4sIIIS")
-		self.assertEquals(packet.pack(), 'TP03' '\x00\x00\x00\x00' '\x00\x00\x00\x00' '\x00\x00\x00\x04' '\x00\x00\x00\x00')
+		self.assertEquals(packet._length, 5)
+		self.assertEquals(packet.pack(), 'TP03' '\x00\x00\x00\x00' '\x00\x00\x00\x00' '\x00\x00\x00\x05' '\x00\x00\x00\x01' '\x01')
 		
 		packet = objects.Fail(0, "Frame", "Error!", [])
 		self.assertEquals(packet.xstruct, "4sIIIIS")
@@ -27,6 +28,7 @@ class TestParser(unittest.TestCase):
 		
 		packet = objects.Okay(0, "\x01")
 		self.assertEquals(packet.xstruct, "4sIIIS")
+		self.assertEquals(packet._length, 5)
 		self.assertEquals(packet.pack(), 'TP' '\x04' '\x00' '\x00\x00\x00\x00' '\x00\x00\x00\x00' '\x00\x00\x00\x05' '\x00\x00\x00\x01' '\x01')
 		
 		packet = objects.Fail(0, "Frame", "Error!", [])
