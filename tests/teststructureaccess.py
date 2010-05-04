@@ -71,7 +71,13 @@ class TestStructureAccess(unittest.TestCase):
 			l3 = ListStructure("l3", structures=[IntegerStructure("i")])
 		
 		obj = test()
-		
+
+
+		obj.l = []
+		self.assertEquals(len(obj.l), 0)
+		self.assertEquals(obj.l, [])
+
+
 		obj.l = [['abc', '\x00']]
 		self.assertEquals(obj.l[0], ['abc', '\x00'])
 		self.assertEquals(obj.l, [['abc', '\x00']])
