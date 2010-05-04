@@ -30,7 +30,7 @@ class ListStructure(GroupStructure):
 			return list(self).__lt__(other)
 		
 		def __len__(self):
-			return len(getattr(self.obj, "__" + self.list.name))
+			return len(getattr(self.obj, "_" + self.list.name))
 		
 		def __getitem__(self, position):
 			if isinstance(position, slice):
@@ -38,9 +38,9 @@ class ListStructure(GroupStructure):
 				return [self.__getitem__(i) for i in positions]
 			else:
 				if len(self.list.structures) != 1:
-					return getattr(self.obj, "__" + self.list.name)[position].group
+					return getattr(self.obj, "_" + self.list.name)[position].group
 				else:
-					return getattr(self.obj, "__" + self.list.name)[position].group[0]
+					return getattr(self.obj, "_" + self.list.name)[position].group[0]
 
 		def __setitem__(self, position, value):
 			if isinstance(position, slice):
@@ -51,12 +51,12 @@ class ListStructure(GroupStructure):
 					self.__setitem__(position,value)
 			else:
 				if len(self.list.structures) != 1:
-					getattr(self.obj, "__" + self.list.name)[position].group = value
+					getattr(self.obj, "_" + self.list.name)[position].group = value
 				else:
-					getattr(self.obj, "__" + self.list.name)[position].group[0] = value
+					getattr(self.obj, "_" + self.list.name)[position].group[0] = value
 	
 		def __delitem__(self, position):
-			del getattr(self.obj, "__" + self.list.name)[position]
+			del getattr(self.obj, "_" + self.list.name)[position]
 		
 		def __iter__(self):
 			copy = [self[i] for i in range(len(self))]
@@ -91,7 +91,7 @@ class ListStructure(GroupStructure):
 					container = self.list.Container(self.obj)
 					container.group = [value]
 					containers.append(container)
-			getattr(self.obj, "__" + self.list.name).__setslice__(i, j, containers)
+			getattr(self.obj, "_" + self.list.name).__setslice__(i, j, containers)
 		
 		def __reversed__(self):
 			return reversed(list(self))
@@ -104,7 +104,7 @@ class ListStructure(GroupStructure):
 				container.group = value
 			else:
 				container.group = [value]
-			getattr(self.obj, "__" + self.list.name).append(container)
+			getattr(self.obj, "_" + self.list.name).append(container)
 		
 		def count(self, value):
 			return list(self).count(value)
@@ -123,19 +123,19 @@ class ListStructure(GroupStructure):
 				container.group = value
 			else:
 				container.group = [value]
-			getattr(self.obj, "__" + self.list.name).insert(index, container)
+			getattr(self.obj, "_" + self.list.name).insert(index, container)
 		
 		def pop(self, index):
 			if len(self.list.structures) != 1:
-				return getattr(self.obj, "__" + self.list.name).pop(index).group
+				return getattr(self.obj, "_" + self.list.name).pop(index).group
 			else:
-				return getattr(self.obj, "__" + self.list.name).pop(index).group[0]
+				return getattr(self.obj, "_" + self.list.name).pop(index).group[0]
 		
 		def remove(self, value):
 			self.pop(self.index(value))
 		
 		def reverse(self):
-			getattr(self.obj, "__" + self.list.name).reverse()
+			getattr(self.obj, "_" + self.list.name).reverse()
 		
 		def sort(self):
 			for index, value in enumerate(sorted(list(self))):
@@ -189,7 +189,7 @@ class ListStructure(GroupStructure):
 	name = ''
 	
 	def pack(self, obj):
-		data = getattr(obj, "__" + self.name)
+		data = getattr(obj, "_" + self.name)
 		size = len(data)
 		string = pack('I', size)
 		for i in data:
@@ -210,16 +210,16 @@ class ListStructure(GroupStructure):
 	
 	def __set__(self, obj, values):
 		self.check(values)
-		setattr(obj, "__" + self.name, [])
+		setattr(obj, "_" + self.name, [])
 		for value in values:
 			if len(self.structures) != 1:
 				container = self.Container(obj)
 				container.group = value
-				getattr(obj, "__" + self.name).append(container)
+				getattr(obj, "_" + self.name).append(container)
 			else:
 				container = self.Container(obj)
 				container.group = (value,)
-				getattr(obj, "__" + self.name).append(container)
+				getattr(obj, "_" + self.name).append(container)
 
 	def __get__(self, obj, objcls):
 		if obj is None:
@@ -228,5 +228,5 @@ class ListStructure(GroupStructure):
 		return self.ListProxy(self, obj, objcls)
 
 	def __delete__(self, obj):
-		delattr(obj, "__" + self.name)
+		delattr(obj, "_" + self.name)
 
