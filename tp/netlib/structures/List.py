@@ -205,6 +205,8 @@ class ListStructure(GroupStructure):
 			data.append(self.Container(obj))
 			for structure in self.structures:
 				string = structure.unpack(data[-1], string)
+
+		setattr(obj, "_" + self.name, data)
 		
 		return string
 	
