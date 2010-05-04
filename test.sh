@@ -10,6 +10,7 @@ coverage -x testxstruct.py
 coverage -x teststructures.py
 coverage -x teststructureaccess.py
 coverage -x testparser.py
+coverage -x testpacking.py
 
 #generate the html report
 mkdir -p html

@@ -17,8 +17,7 @@ def _makeHeader(version):
 	
 		def __init__(self, *arguments, **kw):
 			if len(arguments) == 0:
-				# We are building a packet from the wire.
-				raise NotImplimented("Not finished yet...")
+				Packet.__init__(self)
 			else:
 				Packet.__init__(self, self.VERSION, arguments[0], self.__class__._id, 0, *arguments[1:], **kw)
 		
@@ -27,11 +26,10 @@ def _makeHeader(version):
 		def get_length(self):
 			l = 0
 			for structure in self.structures:
-				if structure.name == 'length':
-					value = None
-				else:
-					value = getattr(self, structure.name)
-				l += structure.length(value)
-			return l - (4*8+32+32+32)/8
+				if structure in Header._structures:
+					continue
+				l += structure.length(getattr(self, structure.name))
+			return l 
 		_length = property(get_length, set_length)
+
 	return Header

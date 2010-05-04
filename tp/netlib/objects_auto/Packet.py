@@ -48,6 +48,9 @@ class Packet(object):
 	def __init__(self, *arguments):
 		self.structures = self.__class__.structures
 
+		if len(arguments) == 0:
+			return
+
 		if len(arguments) < len(self.structures):
 			raise ValueError("Not enough arguments given (received %s rather than %s)" % (len(arguments), len(self.structures)))
 		
