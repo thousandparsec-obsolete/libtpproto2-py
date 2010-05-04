@@ -1,13 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
-sys.path.insert(0, 'tp/netlib')
-
 import unittest
 from datetime import datetime
 
-import parser
+import tp.netlib.parser as parser
 
 class TestParser(unittest.TestCase):
 	

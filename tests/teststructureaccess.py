@@ -1,5 +1,5 @@
-import sys
-sys.path.insert(0, '..')
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import unittest
 
