@@ -69,6 +69,7 @@ class TestStructureAccess(unittest.TestCase):
 			l = ListStructure("l", structures=[StringStructure("s"), CharacterStructure("c")])
 			l2 = ListStructure("l2", structures=[StringStructure("s")])
 			l3 = ListStructure("l3", structures=[IntegerStructure("i")])
+			l4 = ListStructure("l4", structures=[EnumerationStructure("e", values={'a':0, 'b':1})])
 		
 		obj = test()
 
@@ -167,6 +168,11 @@ class TestStructureAccess(unittest.TestCase):
 		self.assertEqual(obj.l3, value)
 		test.l3.unpack(obj, test.l3.pack(obj))
 		self.assertEqual(obj.l3, value)
+
+		obj.l4 = range(2)
+		self.assertEqual(obj.l4, [0,1])
+		self.assertRaises(ValueError, obj.l4.__setitem__, 0, 2)
+
 
 if __name__ == '__main__':
 	unittest.main()
